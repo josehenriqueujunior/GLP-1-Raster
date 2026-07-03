@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Rastreador GLP-1</title> 
+    <title>Meu Rastreador GLP-1</title>
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -340,28 +340,51 @@
     }
 
     function calcularMetricasSaude() {
+        // 1. Corrigido para buscar a chave correta do nosso localStorage anterior
+        const dadosSalvos = JSON.parse(localStorage.getItem('glp1_data')) || { applications: [], bodyStats: [] };
+        const registrosCorporais = dadosSalvos.bodyStats || [];
 
-        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
+        // Filtra apenas os registros que possuem peso válido
+        const dadosComPeso = registrosCorporais.filter(r => r.weight && String(r.weight).trim() !== '');
+        
         const painelImc = document.getElementById('painel-imc');
-        const painelAgua = document.getElementById('painel-agua');if (dadosComPeso.length === 0) {painelImc.innerText = '-';painelImc.style.color = 'inherit';painelAgua.innerText = '-';return;}// Obtém o peso mais recente (o último do array ordenado)
-        const pesoAtual = parseFloat(dadosComPeso[dadosComPeso.length - 1].peso);
-        const alturaCm = parseFloat(document.getElementById('altura-usuario').value) || 0;// Cálculo da Água (35ml por kg corporal)
-        const qtdAguaLitros = (pesoAtual * 35) / 1000;painelAgua.innerText = ${qtdAguaLitros.toFixed(1)}L / dia;// Cálculo do IMCif (alturaCm > 0) {
-        const alturaMetros = alturaCm / 100;
-        const imc = pesoAtual / (alturaMetros * alturaMetros);
-        let classificacao = '';
-        let corText = 'inherit';
-        if (imc < 18.5) { 
-            classificacao = 'Abaixo do peso'; corText = '#e67e22'; 
-        } else if (imc < 25) { 
-            classificacao = 'Normal'; corText = 'var(--cor-principal)'; 
-          } else if (imc < 30) { classificacao = 'Sobrepeso'; corText = 'var(--cor-alerta)'; 
-          } else { 
-            classificacao = 'Obesidade'; corText = 'var(--cor-perigo)'; 
-          }
+        const painelAgua = document.getElementById('painel-agua');
 
-  painelImc.innerHTML = `${imc.toFixed(1)} <br><span style="font-size:11px; color:${corText}; font-weight:normal;">${classificacao}</span>`;
+        if (dadosComPeso.length === 0) {
+            painelImc.innerText = '-';
+            painelImc.style.color = 'inherit';
+            painelAgua.innerText = '-';
+            return;
+        }
+
+        // O primeiro item [0] é o mais recente porque usamos .unshift() ao salvar
+        const pesoAtual = parseFloat(dadosComPeso[0].weight);
+        const alturaCm = parseFloat(document.getElementById('altura-usuario').value) || 0;
+
+        // Cálculo da Água (35ml por kg corporal)
+        const qtdAguaLitros = (pesoAtual * 35) / 1000;
+        
+        // CORREÇÃO: Adicionadas as crases faltantes nesta linha abaixo
+        painelAgua.innerText = `${qtdAguaLitros.toFixed(1)}L / dia`;
+
+        // Cálculo do IMC
+        if (alturaCm > 0) {
+            const alturaMetros = alturaCm / 100;
+            const imc = pesoAtual / (alturaMetros * alturaMetros);
+            let classificacao = '';
+            let corText = 'inherit';
+            
+            if (imc < 18.5) { 
+                classificacao = 'Abaixo do peso'; corText = '#e67e22'; 
+            } else if (imc < 25) { 
+                classificacao = 'Normal'; corText = 'var(--cor-principal, #4f46e5)'; 
+            } else if (imc < 30) { 
+                classificacao = 'Sobrepeso'; corText = 'var(--cor-alerta, #f59e0b)'; 
+            } else { 
+                classificacao = 'Obesidade'; corText = 'var(--cor-perigo, #ef4444)'; 
+            }
+
+            painelImc.innerHTML = `${imc.toFixed(1)} <br><span style="font-size:11px; color:${corText}; font-weight:normal;">${classificacao}</span>`;
         } else {
             painelImc.innerText = 'Defina a altura';
             painelImc.style.color = 'inherit';
