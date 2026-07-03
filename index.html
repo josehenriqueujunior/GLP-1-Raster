@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Rastreador GLP-1</title>
+    <style>
+        /* --- ESTILOS CSS (Altere as cores e fontes aqui) --- */
+        :root {
+            --cor-principal: #2d6a4f;
+            --cor-fundo: #f4f9f4;
+            --cor-card: #ffffff;
+            --cor-texto: #1b4332;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--cor-card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: var(--cor-principal);
+        }
+
+        .campo {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn-salvar {
+            background-color: var(--cor-principal);
+            color: white;
+        }
+
+        .btn-backup {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .historico-lista {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .item-aplicacao {
+            background: #f8f9fa;
+            padding: 12px;
+            border-left: 5px solid var(--cor-principal);
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💉 Registro GLP-1</h1>
+    
+    <!-- FORMULÁRIO DE ENTRADA -->
+    <form id="form-registro">
+        <div class="campo">
+            <label for="data">Data da Aplicação:</label>
+            <input type="date" id="data" required>
+        </div>
+
+        <div class="campo">
+            <label for="dose">Dose Utilizada:</label>
+            <select id="dose" required>
+                <option value="0.25 mg">0.25 mg</option>
+                <option value="0.50 mg">0.50 mg</option>
+                <option value="1.0 mg">1.0 mg</option>
+                <option value="2.4 mg">2.4 mg</option>
+            </select>
+        </div>
+
+        <div class="campo">
+            <label for="local">Local da Aplicação:</label>
+            <select id="local" required>
+                <option value="Abdômen Esquerdo">Abdômen Esquerdo</option>
+                <option value="Abdômen Direito">Abdômen Direito</option>
+                <option value="Coxa Esquerda">Coxa Esquerda</option>
+                <option value="Coxa Direita">Coxa Direita</option>
+                <option value="Braço">Braço</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-salvar">Salvar Aplicação</button>
+    </form>
+
+    <button onclick="exportarBackup()" class="btn-backup">💾 Baixar Backup dos Dados</button>
+
+    <!-- HISTÓRICO -->
+    <h2>Histórico Pessoal</h2>
+    <div id="historico" class="historico-lista">
+        <!-- Os registros salvos vão aparecer aqui dentro via JS -->
+    </div>
+</div>
+
+<script>
+    // --- LÓGICA JAVASCRIPT (Gerencia os dados e o LocalStorage) ---
+
+    // Define a data de hoje automaticamente no formulário ao abrir a página
+    document.getElementById('data').valueAsDate = new Date();
+
+    const form = document.getElementById('form-registro');
+    const historicoDiv = document.getElementById('historico');
+
+    // Função para carregar dados do LocalStorage e exibir na tela
+    function carregarHistorico() {
+        historicoDiv.innerHTML = '';
+        // Busca os dados existentes ou cria uma lista vazia se não houver nenhum
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+
+        // Exibe do mais recente para o mais antigo
+        registros.reverse().forEach(reg => {
+            const div = document.createElement('div');
+            div.className = 'item-aplicacao';
+            div.innerHTML = `
+                <strong>Data:</strong> ${formatarData(reg.data)} <br>
+                <strong>Dose:</strong> ${reg.dose} | <strong>Local:</strong> ${reg.local}
+            `;
+            historicoDiv.appendChild(div);
+        });
+    }
+
+    // Função auxiliar para formatar a data padrão (AAAA-MM-DD) para o formato brasileiro (DD/MM/AAAA)
+    function formatarData(dataString) {
+        const [ano, mes, dia] = dataString.split('-');
+        return `${dia}/${mes}/${ano}`;
+    }
+
+    // Evento de envio do formulário
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Evita que a página recarregue ao enviar
+
+        const novaAplicacao = {
+            data: document.getElementById('data').value,
+            dose: document.getElementById('dose').value,
+            local: document.getElementById('local').value
+        };
+
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        registros.push(novaAplicacao); // Adiciona o novo registro à lista
+
+        localStorage.setItem('dadosGLP1', JSON.stringify(registros)); // Salva de volta no LocalStorage
+        
+        carregarHistorico(); // Atualiza a tela
+        alert('Aplicação registrada com sucesso!');
+    });
+
+    // Função para gerar o arquivo de backup para download seguro
+    function exportarBackup() {
+        const dados = localStorage.getItem('dadosGLP1');
+        if (!dados || dados === "[]") {
+            alert("Não há dados para exportar ainda.");
+            return;
+        }
+
+        const blob = new Blob([dados], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "backup_glp1.json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    // Executa ao abrir a página pela primeira vez
+    carregarHistorico();
+</script>
+
+</body>
+</html>
