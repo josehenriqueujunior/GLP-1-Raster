@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Rastreador GLP-1</title>
-    <!-- CARREGAMENTO OFICIAL DA BIBLIOTECA DE GRÁFICOS DA GOOGLE -->
-    <script src="https://gstatic.com"></script>
+    <!-- LINK CORETTO, DIRETTO E COMPLETO DA BIBLIOTECA NO SERVIDOR DA CLOUDFLARE -->
+    <script src="https://cloudflare.com"></script>
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -78,7 +78,7 @@
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #eee;
-            min-height: 200px;
+            position: relative;
         }
 
         .campo {
@@ -183,9 +183,9 @@
         </div>
     </div>
 
-    <!-- ÁREA DO GRÁFICO DA GOOGLE -->
+    <!-- ÁREA DO CANVAS PARA O CHART.JS -->
     <div class="grafico-container">
-        <div id="graficoGoogle" style="width: 100%; height: 200px;"></div>
+        <canvas id="graficoPeso" style="width: 100%; height: 200px;"></canvas>
     </div>
 
     <form id="form-registro">
@@ -227,28 +227,21 @@
     </form>
 
     <button onclick="exportarBackup()" class="btn-backup">💾 Baixar Backup dos Dados</button>
+    <button onclick="limparTodoHistorico()" style="background-color: var(--cor-perigo); color: white;">🗑️ Limpar Todo o Histórico</button>
 
     <h2>Histórico Pessoal</h2>
     <div id="historico" class="historico-lista"></div>
 </div>
 
 <script>
-    // Inicialização correta e encadeada do Google Charts
-    if (typeof google !== 'undefined') {
-        google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(inicializarApp);
-    } else {
-        // Fallback de contingência caso a rede atrase o carregamento da Google
-        window.addEventListener('load', inicializarApp);
-    }
-
     const dataInput = document.getElementById('data');
     const form = document.getElementById('form-registro');
     const historicoDiv = document.getElementById('historico');
     const editIndexInput = document.getElementById('edit-index');
     const btnSubmit = document.getElementById('btn-submit');
+    let meuGrafico = null;
 
-    // Máscara de digitação estável para DD/MM/AAAA
+    // Máscara automática de digitação (DD/MM/AAAA)
     dataInput.addEventListener('input', function(e) {
         let v = e.target.value.replace(/\D/g, ''); 
         if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2);
@@ -264,10 +257,10 @@
 
     function definirDataDeHoje() {
         const hoje = new Date();
-        const dia = String(hoje.getDate()).padStart(2, '0');
-        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-        const ano = hoje.getFullYear();
-        dataInput.value = `${dia}/${mes}/${ano}`;
+        const d = String(hoje.getDate()).padStart(2, '0');
+        const m = String(hoje.getMonth() + 1).padStart(2, '0');
+        const a = hoje.getFullYear();
+        dataInput.value = `${d}/${m}/${a}`;
     }
 
     function carregarMeta() {
@@ -310,31 +303,33 @@
         renderizarGrafico();
     }
 
-    // CORREÇÃO CRÍTICA: Mapeamento de índices do vetor preservado
     function converterParaDataObjeto(stringData) {
         if (!stringData) return new Date();
         const partes = stringData.split('/');
         if (partes.length !== 3) return new Date();
         
-        // Destruturação: extrai as variáveis diretamente sem usar índices numéricos
         const [diaStr, mesStr, anoStr] = partes;
-        return new Date(parseInt(anoStr), parseInt(mesStr) - 1, parseInt(diaStr))
+        return new Date(parseInt(anoStr), parseInt(mesStr) - 1, parseInt(diaStr));
     }
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
         const dataValor = dataInput.value;
-        if (dataValor.length !== 10) {alert('Por favor, digite a data completa no formato DD/MM/AAAA');return;}
+        if (dataValor.length !== 10) {
+            alert('Por favor, digite a data completa no formato DD/MM/AAAA');
+            return;
+        }
+
         const indexEdicao = parseInt(editIndexInput.value);
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const dadosAplicacao = {data: dataValor,peso: document.getElementById('peso').value,dose: document.getElementById('dose').value,local: document.getElementById('local').value};if (indexEdicao === -1) {registros.push(dadosAplicacao);} else {registros[indexEdicao] = dadosAplicacao;editIndexInput.value = "-1";btnSubmit.innerText = "Salvar Aplicação";btnSubmit.style.backgroundColor = "var(--cor-principal)";btnSubmit.style.color = "white";}
-    // Ordenação cronológica corrigida e testada
-        registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();form.reset();definirDataDeHoje();
-        alert('Dados salvos com sucesso!');});
+
+
+        const dadosAplicacao = {data: dataValor,peso: document.getElementById('peso').value,dose: document.getElementById('dose').value,local: document.getElementById('local').value};if (indexEdicao === -1) {registros.push(dadosAplicacao);} else {registros[indexEdicao] = dadosAplicacao;editIndexInput.value = "-1";btnSubmit.innerText = "Salvar Aplicação";btnSubmit.style.backgroundColor = "var(--cor-principal)";btnSubmit.style.color = "white";}registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();form.reset();definirDataDeHoje();alert('Dados salvos com sucesso!');});
+    
     function excluirRegistro(index) {
         if (confirm("Tem certeza que deseja excluir este registro?")) {
-            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();
         }
     }
     function editarRegistro(index) {
@@ -342,26 +337,30 @@
         const reg = registros[index];dataInput.value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     function renderizarGrafico() {
-        if (typeof google === 'undefined' || !google.visualization || !google.visualization.DataTable) return;
+        if (typeof Chart === 'undefined') return;
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const meta = parseFloat(document.getElementById('meta-peso').value) || null;// Filtra apenas registros com peso cadastrado
-        const registrosComPeso = registros.filter(r => r.peso && r.peso.trim() !== '');
-        if (registrosComPeso.length === 0) {
-            // Limpa o contêiner se não houver dados para exibir
-            document.getElementById('graficoGoogle').innerHTML = 'Insira a primeira aplicação com peso para iniciar o gráfico.';return;
+        const meta = parseFloat(document.getElementById('meta-peso').value) || null;
+        const registrosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');if (meuGrafico) {meuGrafico.destroy();meuGrafico = null;}
+        const canvas = document.getElementById('graficoPeso');if (!canvas) return;
+        const ctx = canvas.getContext('2d');if (registrosComPeso.length === 0) {ctx.clearRect(0, 0, canvas.width, canvas.height);return;}
+        const labels = registrosComPeso.map(r => r.data);
+        const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));
+        const dadosMeta = registrosComPeso.map(() => meta);meuGrafico = new Chart(ctx, {type: 'line',data: {labels: labels,datasets: [{label: 'Peso Atual (kg)',data: dadosPeso,borderColor: '#2d6a4f',backgroundColor: 'rgba(45, 106, 79, 0.1)',tension: 0.2,fill: true},{label: 'Minha Meta',data: dadosMeta,borderColor: '#d90429',pointRadius: 0,fill: false}]},options: {responsive: true,scales: {y: {beginAtZero: false,title: { display: true, text: 'Peso (kg)' }}}}});
+    }
+    function limparTodoHistorico() {
+        if (confirm("ATENÇÃO: Isso apagará permanentemente todas as suas aplicações e o gráfico. Deseja continuar?")) {
+            localStorage.removeItem('dadosGLP1');localStorage.removeItem('metaPesoGLP1');location.reload();
         }
-        const dataTable = new google.visualization.DataTable();dataTable.addColumn('string', 'Data');dataTable.addColumn('number', 'Peso Atual (kg)');dataTable.addColumn('number', 'Minha Meta');registrosComPeso.forEach(r => {dataTable.addRow([r.data, parseFloat(r.peso), meta]);});
-        const options = {colors: ['#2d6a4f', '#d90429'],curveType: 'function',legend: { position: 'bottom' },chartArea: { width: '85%', height: '70%' },vAxis: { title: 'Peso (kg)' },hAxis: { title: 'Data da Aplicação' }};
-        const containerGrafico = document.getElementById('graficoGoogle');
-        if (!containerGrafico) return;
-        const chart = new google.visualization.LineChart(containerGrafico);chart.draw(dataTable, options);
     }
     function exportarBackup() {
         const backupTotal = {historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || ""};
         const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();
+        const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";
+        document.body.appendChild(a);
+        a.click();
         document.body.removeChild(a);
     }
-    window.addEventListener('resize', renderizarGrafico);
+    // Inicialização direta garantida
+    inicializarApp();
 </script>
