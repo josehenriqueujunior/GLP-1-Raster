@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Rastreador GLP-1</title>
-    <!-- Biblioteca do Gráfico (Link alternativo oficial via Cloudflare) -->
-    <script src="https://cloudflare.com"></script>
+    <!-- Biblioteca do Gráfico Corrigida (Link Oficial e Estável) -->
+    <script src="https://gstatic.com"></script>
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -195,7 +195,7 @@
         <div class="linha-dupla">
             <div class="campo">
                 <label for="data">Data:</label>
-                <input type="text" id="data" placeholder="DD/MM/AAAA" maxlength="10" required>
+                <input type="date" id="data" required>
             </div>
             
             <div class="campo">
@@ -234,6 +234,7 @@
 </div>
 
 <script>
+    // Define a data atual por padrão
     document.getElementById('data').valueAsDate = new Date();
 
     const form = document.getElementById('form-registro');
@@ -311,6 +312,7 @@
             btnSubmit.style.color = "white";
         }
 
+        // Ordena por data
         registros.sort((a, b) => new Date(a.data) - new Date(b.data));
         localStorage.setItem('dadosGLP1', JSON.stringify(registros));
         
@@ -332,8 +334,8 @@
         const reg = registros[index];document.getElementById('data').value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     function renderizarGrafico() {
-        // Verifica se a biblioteca Chart.js foi carregada com sucesso antes de tentar desenhar
-        if (typeof Chart === 'undefined') {console.warn("Aguardando carregamento da biblioteca de gráficos...");return;}
+        if (typeof Chart === 'undefined') return;
+
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
         const meta = parseFloat(document.getElementById('meta-peso').value) || null;
         const registrosComPeso = registros.filter(r => r.peso);
@@ -349,8 +351,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();document.body.removeChild(a);
     }
-    // Inicializa com segurança monitorando o carregamento externo
+    // Inicialização segura
     window.addEventListener('load', () => {carregarMeta();carregarHistorico();});
-    // Fallback caso o evento load já tenha passado
     carregarMeta();
-    arregarHistorico();
+    carregarHistorico();
