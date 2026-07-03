@@ -287,8 +287,11 @@
         <button type="submit" id="btn-submit" class="btn-salvar">Salvar Aplicação</button>
     </form>
 
-   <!-- <button onclick="exportarBackup()" class="btn-backup">💾 Baixar Backup dos Dados</button>
-    <button onclick="limparTodoHistorico()" style="background-color: var(--cor-perigo); color: white;">🗑️ Limpar Todo o Histórico</button> -->
+   <!-- 
+    <button onclick="exportarBackup()" class="btn-backup">💾 Baixar Backup dos Dados</button>
+    <button onclick="limparTodoHistorico()" style="background-color: var(--cor-perigo); color: white;">🗑️ Limpar Todo o Histórico</button> 
+    <input type="file" id="importarFile" accept=".json" onchange="importarBackupJSON(this)">
+    -->
 
     <h2>Histórico Pessoal</h2>
     <div id="historico" class="historico-lista"></div>
@@ -567,6 +570,42 @@
             location.reload();
         }
     }
+    function importarBackupJSON(input) {
+    const arquivo = input.files[0];
+    if (!arquivo) return;
+
+    const leitor = new FileReader();
+    
+    leitor.onload = function(evento) {
+        try {
+            // Converte o texto do arquivo de volta para um objeto JavaScript
+            const dadosImportados = JSON.parse(evento.target.result);
+            
+            // Valida se o arquivo possui a estrutura correta de chaves
+            if (dadosImportados.applications && dadosImportados.bodyStats) {
+                
+                // Grava os dados importados no localStorage do navegador
+                localStorage.setItem('glp1_data', JSON.stringify(dadosImportados));
+                
+                // Recarrega as funções da sua tela para atualizar os dados visualmente
+                if (typeof renderAll === "function") renderAll(); 
+                if (typeof calcularMetricasSaude === "function") calcularMetricasSaude();
+                
+                alert("Backup carregado e atualizado com sucesso! 🎉");
+            } else {
+                alert("Erro: O arquivo selecionado não possui um formato de backup válido do sistema.");
+            }
+        } catch (erro) {
+            alert("Erro crítico: Não foi possível ler o arquivo. Certifique-se de que é um arquivo .json válido.");
+        }
+    };
+    
+    // Inicia a leitura do arquivo como texto
+    leitor.readAsText(arquivo);
+    
+    // Limpa o input para permitir subir o mesmo arquivo novamente se necessário
+    input.value = '';
+}
     function exportarBackup() {
         const backupTotal = {
             historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || "",altura: localStorage.getItem('alturaGLP1') || ""};
