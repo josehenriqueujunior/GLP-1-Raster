@@ -12,6 +12,7 @@
             --cor-texto: #1b4332;
             --cor-perigo: #d90429;
             --cor-alerta: #ffb703;
+            --cor-info: #0288d1;
         }
 
         body {
@@ -44,30 +45,67 @@
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            text-align: center;
             border: 1px solid #c8e6c9;
+        }
+
+        .linha-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 12px;
+        }
+
+        .meta-bloco {
+            flex: 1;
+            text-align: center;
         }
 
         .meta-titulo {
             font-weight: bold;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 6px;
+            font-size: 12px;
             text-transform: uppercase;
+            color: var(--cor-principal);
         }
 
         .meta-input-group {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
         }
 
         .meta-input-group input {
-            width: 100px;
+            width: 80px;
             text-align: center;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             padding: 6px;
+        }
+
+        /* Painel de Indicadores de Saúde */
+        .paineis-saude {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            border-top: 1px dashed #c8e6c9;
+            padding-top: 12px;
+        }
+
+        .painel-box {
+            flex: 1;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .painel-val {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 4px;
         }
 
         .grafico-container {
@@ -177,14 +215,36 @@
     <h1>💉 Registro GLP-1</h1>
     
     <div class="meta-container">
-        <div class="meta-titulo">🎯 Minha Meta de Peso</div>
-        <div class="meta-input-group">
-            <input type="number" id="meta-peso" step="0.1" placeholder="Ex: 70.0" onchange="atualizarMetaDoGrafico()">
-            <span>kg</span>
+        <div class="linha-meta">
+            <div class="meta-bloco">
+                <div class="meta-titulo">🎯 Meta de Peso</div>
+                <div class="meta-input-group">
+                    <input type="number" id="meta-peso" step="0.1" placeholder="70.0" onchange="salvarConfiguracoes()")>
+                    <span>kg</span>
+                </div>
+            </div>
+            <div class="meta-bloco">
+                <div class="meta-titulo">📏 Minha Altura</div>
+                <div class="meta-input-group">
+                    <input type="number" id="altura-usuario" step="1" placeholder="170" onchange="salvarConfiguracoes()")>
+                    <span>cm</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINÉIS DE CÁLCULO AUTOMÁTICO -->
+        <div class="paineis-saude">
+            <div class="painel-box">
+                <div class="meta-titulo">📊 Meu IMC Atual</div>
+                <div id="painel-imc" class="painel-val">-</div>
+            </div>
+            <div class="painel-box">
+                <div class="meta-titulo">💧 Água Diária</div>
+                <div id="painel-agua" class="painel-val">-</div>
+            </div>
         </div>
     </div>
 
-    <!-- ÁREA DO GRÁFICO SVG NATIVO (IMUNE A CSP) -->
     <div class="grafico-container" id="containerGrafico"></div>
 
     <form id="form-registro">
@@ -212,14 +272,13 @@
         </div>
 
         <div class="campo">
-            <label for="local">Local da Aplicacao:</label>
+            <label for="local">Local da Aplicação:</label>
             <select id="local" required>
                 <option value="Abdômen Esquerdo">Abdômen Esquerdo</option>
                 <option value="Abdômen Direito">Abdômen Direito</option>
                 <option value="Coxa Esquerda">Coxa Esquerda</option>
                 <option value="Coxa Direita">Coxa Direita</option>
-                <option value="Braço Direito">Braço Direito</option>
-                <option value="Braço Esquerdo">Braço Esquerdo</option>
+                <option value="Braço">Braço</option>
             </select>
         </div>
 
@@ -240,7 +299,6 @@
     const editIndexInput = document.getElementById('edit-index');
     const btnSubmit = document.getElementById('btn-submit');
 
-    // Máscara automática de digitação (DD/MM/AAAA)
     dataInput.addEventListener('input', function(e) {
         let v = e.target.value.replace(/\D/g, ''); 
         if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2);
@@ -250,7 +308,7 @@
 
     function inicializarApp() {
         definirDataDeHoje();
-        carregarMeta();
+        carregarConfiguracoes();
         carregarHistorico();
     }
 
@@ -262,17 +320,52 @@
         dataInput.value = `${d}/${m}/${a}`;
     }
 
-    function carregarMeta() {
+    function carregarConfiguracoes() {
         const metaSalva = localStorage.getItem('metaPesoGLP1');
-        if (metaSalva) {
-            document.getElementById('meta-peso').value = metaSalva;
-        }
+        if (metaSalva) document.getElementById('meta-peso').value = metaSalva;
+
+        const alturaSalva = localStorage.getItem('alturaGLP1');
+        if (alturaSalva) document.getElementById('altura-usuario').value = alturaSalva;
     }
 
-    function atualizarMetaDoGrafico() {
+    function salvarConfiguracoes() {
         const valorMeta = document.getElementById('meta-peso').value;
+        const valorAltura = document.getElementById('altura-usuario').value;
+        
         localStorage.setItem('metaPesoGLP1', valorMeta);
+        localStorage.setItem('alturaGLP1', valorAltura);
+        
+        calcularMetricasSaude();
         renderizarGrafico();
+    }
+
+    function calcularMetricasSaude() {
+
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
+        const painelImc = document.getElementById('painel-imc');
+        const painelAgua = document.getElementById('painel-agua');if (dadosComPeso.length === 0) {painelImc.innerText = '-';painelImc.style.color = 'inherit';painelAgua.innerText = '-';return;}// Obtém o peso mais recente (o último do array ordenado)
+        const pesoAtual = parseFloat(dadosComPeso[dadosComPeso.length - 1].peso);
+        const alturaCm = parseFloat(document.getElementById('altura-usuario').value) || 0;// Cálculo da Água (35ml por kg corporal)
+        const qtdAguaLitros = (pesoAtual * 35) / 1000;painelAgua.innerText = ${qtdAguaLitros.toFixed(1)}L / dia;// Cálculo do IMCif (alturaCm > 0) {
+        const alturaMetros = alturaCm / 100;
+        const imc = pesoAtual / (alturaMetros * alturaMetros);
+        let classificacao = '';
+        let corText = 'inherit';
+        if (imc < 18.5) { 
+            classificacao = 'Abaixo do peso'; corText = '#e67e22'; 
+        } else if (imc < 25) { 
+            classificacao = 'Normal'; corText = 'var(--cor-principal)'; 
+          } else if (imc < 30) { classificacao = 'Sobrepeso'; corText = 'var(--cor-alerta)'; 
+          } else { 
+            classificacao = 'Obesidade'; corText = 'var(--cor-perigo)'; 
+          }
+
+  painelImc.innerHTML = `${imc.toFixed(1)} <br><span style="font-size:11px; color:${corText}; font-weight:normal;">${classification}</span>`;
+        } else {
+            painelImc.innerText = 'Defina a altura';
+            painelImc.style.color = 'inherit';
+        }
     }
 
     function carregarHistorico() {
@@ -299,6 +392,7 @@
             historicoDiv.appendChild(div);
         });
 
+        calcularMetricasSaude();
         renderizarGrafico();
     }
 
@@ -328,6 +422,7 @@
             dose: document.getElementById('dose').value,
             local: document.getElementById('local').value
         };
+
         if (indexEdicao === -1) {
             registros.push(dadosAplicacao);
         } else {
@@ -337,30 +432,42 @@
             btnSubmit.style.backgroundColor = "var(--cor-principal)";
             btnSubmit.style.color = "white";
         }
+
         registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));
         localStorage.setItem('dadosGLP1', JSON.stringify(registros));
+        
         carregarHistorico();
         form.reset();
         definirDataDeHoje();
-        alert('Dados salvos com sucesso!');});
+        alert('Dados salvos com sucesso!');
+    });
+
     function excluirRegistro(index) {
         if (confirm("Tem certeza que deseja excluir este registro?")) {
-            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || []; 
-            registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));
+            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+            registros.splice(index, 1);
+            localStorage.setItem('dadosGLP1', JSON.stringify(registros));
             carregarHistorico();
         }
     }
+
     function editarRegistro(index) {
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const reg = registros[index];dataInput.value = reg.data;document.getElementById('peso').value = reg.peso || '';
+        const reg = registros[index];
+
+        dataInput.value = reg.data;
+        document.getElementById('peso').value = reg.peso || '';
         document.getElementById('dose').value = reg.dose;
         document.getElementById('local').value = reg.local;
+
         editIndexInput.value = index;
         btnSubmit.innerText = "Atualizar Registro Antigo ✏️";
         btnSubmit.style.backgroundColor = "var(--cor-alerta)";
         btnSubmit.style.color = "#000";
+        
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
     function renderizarGrafico() {
         const wrapper = document.getElementById('containerGrafico');
         if (!wrapper) return;
@@ -413,47 +520,27 @@
             `;
         }
 
-        wrapper.innerHTML = `
-            <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:auto;">
-                <line x1="${margem}" y1="${margem}" x2="${largura - margem}" y2="${margem}" stroke="#f0f0f0" />
-                <line x1="${margem}" y1="${altura - margem}" x2="${largura - margem}" y2="${altura - margem}" stroke="#e0e0e0" />
-                
-                <text x="${margem - 5}" y="${margem + 4}" font-size="10" fill="#666" text-anchor="end">${pesoMax.toFixed(0)}kg</text>
-                <text x="${margem - 5}" y="${altura - margem + 4}" font-size="10" fill="#666" text-anchor="end">${pesoMin.toFixed(0)}kg</text>
-
-                ${linhaMetaHtml}
-
-                ${totalPontos > 1 ? `<polyline points="${coordenadasPeso}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" />` : ''}
-                ${pontosHtml}
-
-                ${legendasXHtml}
-            </svg>
-        `;
-    }
-
+        wrapper.innerHTML = `${linhaMetaHtml}${totalPontos > 1 ? <polyline points="${coordenadasPeso}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" /> : ''}${pontosHtml}${legendasXHtml}`;}
     function limparTodoHistorico() {
         if (confirm("ATENÇÃO: Isso apagará permanentemente todas as suas aplicações e o gráfico. Deseja continuar?")) {
             localStorage.removeItem('dadosGLP1');
             localStorage.removeItem('metaPesoGLP1');
+            localStorage.removeItem('alturaGLP1');
             location.reload();
         }
     }
-
     function exportarBackup() {
         const backupTotal = {
-            historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],
-            meta: localStorage.getItem('metaPesoGLP1') || ""
-        };
-        const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "backup_completo_glp1.json";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+            historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || "",altura: localStorage.getItem('alturaGLP1') || ""};
+            const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "backup_completo_glp1.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
     }
-
-    // Inicialização direta do ecossistema do app
+    window.addEventListener('resize', renderizarGrafico);
     inicializarApp();
 </script>
