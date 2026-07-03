@@ -219,14 +219,14 @@
             <div class="meta-bloco">
                 <div class="meta-titulo">🎯 Meta de Peso</div>
                 <div class="meta-input-group">
-                    <input type="number" id="meta-peso" step="0.1" placeholder="70.0" onchange="salvarConfiguracoes()")>
+                    <input type="number" id="meta-peso" step="0.1" placeholder="70.0" onchange="salvarConfiguracoes()">
                     <span>kg</span>
                 </div>
             </div>
             <div class="meta-bloco">
                 <div class="meta-titulo">📏 Minha Altura</div>
                 <div class="meta-input-group">
-                    <input type="number" id="altura-usuario" step="1" placeholder="170" onchange="salvarConfiguracoes()")>
+                    <input type="number" id="altura-usuario" step="1" placeholder="170" onchange="salvarConfiguracoes()">
                     <span>cm</span>
                 </div>
             </div>
@@ -543,7 +543,22 @@
             `;
         }
 
-        wrapper.innerHTML = `${linhaMetaHtml}${totalPontos > 1 ? <polyline points="${coordenadasPeso}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" /> : ''}${pontosHtml}${legendasXHtml}`;}
+        wrapper.innerHTML = `
+            <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:auto;">
+                <line x1="${margem}" y1="${margem}" x2="${largura - margem}" y2="${margem}" stroke="#f0f0f0" />
+                <line x1="${margem}" y1="${altura - margem}" x2="${largura - margem}" y2="${altura - margem}" stroke="#e0e0e0" />
+                
+                <text x="${margem - 5}" y="${margem + 4}" font-size="10" fill="#666" text-anchor="end">${pesoMax.toFixed(0)}kg</text>
+                <text x="${margem - 5}" y="${altura - margem + 4}" font-size="10" fill="#666" text-anchor="end">${pesoMin.toFixed(0)}kg</text>
+
+                ${linhaMetaHtml}
+
+                ${totalPontos > 1 ? `<polyline points="${coordenadasPeso}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" />` : ''}
+                ${pontosHtml}
+
+                ${legendasXHtml}
+            </svg>
+        `;
     function limparTodoHistorico() {
         if (confirm("ATENÇÃO: Isso apagará permanentemente todas as suas aplicações e o gráfico. Deseja continuar?")) {
             localStorage.removeItem('dadosGLP1');
