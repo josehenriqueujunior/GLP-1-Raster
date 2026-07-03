@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Rastreador GLP-1</title>
-    <!-- Biblioteca do Gráfico Corrigida (Link Oficial e Estável) -->
+    <!-- CARREGAMENTO OFICIAL DA BIBLIOTECA DE GRÁFICOS DA GOOGLE -->
     <script src="https://gstatic.com"></script>
     <style>
         :root {
@@ -78,6 +78,7 @@
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #eee;
+            min-height: 200px;
         }
 
         .campo {
@@ -174,7 +175,6 @@
 <div class="container">
     <h1>💉 Registro GLP-1</h1>
     
-    <!-- SEÇÃO DA META DE PESO -->
     <div class="meta-container">
         <div class="meta-titulo">🎯 Minha Meta de Peso</div>
         <div class="meta-input-group">
@@ -183,12 +183,11 @@
         </div>
     </div>
 
-    <!-- GRÁFICO DE EVOLUÇÃO -->
+    <!-- ÁREA DO GRÁFICO DA GOOGLE -->
     <div class="grafico-container">
-        <canvas id="graficoPeso"></canvas>
+        <div id="graficoGoogle" style="width: 100%; height: 200px;"></div>
     </div>
 
-    <!-- FORMULÁRIO DE ENTRADA -->
     <form id="form-registro">
         <input type="hidden" id="edit-index" value="-1">
 
@@ -234,14 +233,22 @@
 </div>
 
 <script>
-    // Define a data atual por padrão
-    document.getElementById('data').valueAsDate = new Date();
+    // Inicialização do Google Charts
+    if (typeof google !== 'undefined') {
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(inicializarApp);
+    }
 
     const form = document.getElementById('form-registro');
     const historicoDiv = document.getElementById('historico');
     const editIndexInput = document.getElementById('edit-index');
     const btnSubmit = document.getElementById('btn-submit');
-    let meuGrafico = null;
+
+    function inicializarApp() {
+        document.getElementById('data').valueAsDate = new Date();
+        carregarMeta();
+        carregarHistorico();
+    }
 
     function carregarMeta() {
         const metaSalva = localStorage.getItem('metaPesoGLP1');
@@ -283,10 +290,12 @@
         renderizarGrafico();
     }
 
+    // Formata a string AAAA-MM-DD para o padrão DD/MM/AAAA de forma garantida
     function formatarData(dataString) {
         if (!dataString) return '';
-        const [ano, mes, dia] = dataString.split('-');
-        return `${dia}/${mes}/${ano}`;
+        const partes = dataString.split('-');
+        if (partes.length !== 3) return dataString; 
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
     }
 
     form.addEventListener('submit', function(e) {
@@ -312,47 +321,33 @@
             btnSubmit.style.color = "white";
         }
 
-        // Ordena por data
         registros.sort((a, b) => new Date(a.data) - new Date(b.data));
         localStorage.setItem('dadosGLP1', JSON.stringify(registros));
         
         carregarHistorico();
         form.reset();
-        document.getElementById('data').valueAsDate = new Date();
-        alert('Dados salvos com sucesso!');
-    });
-
+        document.getElementById('data').valueAsDate = new Date();alert('Dados salvos com sucesso!');});
+    
     function excluirRegistro(index) {
         if (confirm("Tem certeza que deseja excluir este registro?")) {
-            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-            registros.splice(index, 1);
-            localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();
+            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();
         }
     }
     function editarRegistro(index) {
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const reg = registros[index];document.getElementById('data').value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    function renderizarGrafico() {
-        if (typeof Chart === 'undefined') return;
-
+        const reg = registros[index];document.getElementById('data').value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });}
+        function renderizarGrafico() {if (typeof google === 'undefined' || !google.visualization || !google.visualization.DataTable) return;
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
         const meta = parseFloat(document.getElementById('meta-peso').value) || null;
-        const registrosComPeso = registros.filter(r => r.peso);
-        const labels = registrosComPeso.map(r => formatarData(r.data));
-        const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));
-        const dadosMeta = registrosComPeso.map(() => meta);if (meuGrafico) {meuGrafico.destroy();}
-        const canvas = document.getElementById('graficoPeso');if (!canvas) return;
-        const ctx = canvas.getContext('2d');meuGrafico = new Chart(ctx, {type: 'line',data: {labels: labels,datasets: [{label: 'Peso Atual (kg)',data: dadosPeso,borderColor: '#2d6a4f',backgroundColor: 'rgba(45, 106, 79, 0.1)',tension: 0.2,fill: true},{label: 'Minha Meta',data: dadosMeta,borderColor: '#d90429',pointRadius: 0,fill: false}]},options: {responsive: true,scales: {y: {beginAtZero: false,title: { display: true, text: 'Peso (kg)' }}}}});
-    }
+        const registrosComPeso = registros.filter(r => r.peso);if (registrosComPeso.length === 0) return;
+        const dataTable = new google.visualization.DataTable();dataTable.addColumn('string', 'Data');dataTable.addColumn('number', 'Peso Atual (kg)');dataTable.addColumn('number', 'Minha Meta');registrosComPeso.forEach(r => {dataTable.addRow([formatarData(r.data), parseFloat(r.peso), meta]);});
+        const options = {colors: ['#2d6a4f', '#d90429'],curveType: 'function',legend: { position: 'bottom' },chartArea: { width: '85%', height: '70%' },vAxis: { title: 'Peso (kg)' }};
+        const containerGrafico = document.getElementById('graficoGoogle');if (!containerGrafico) return;
+        const chart = new google.visualization.LineChart(containerGrafico);chart.draw(dataTable, options);}
     function exportarBackup() {
         const backupTotal = {historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || ""};
         const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();document.body.removeChild(a);
+        const url = URL.createObjectURL(blob);const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();document.body.removeChild(a);
     }
-    // Inicialização segura
-    window.addEventListener('load', () => {carregarMeta();carregarHistorico();});
-    carregarMeta();
-    carregarHistorico();
+    window.addEventListener('resize', renderizarGrafico)
 </script>
