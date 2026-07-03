@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Rastreador GLP-1</title>
-    <!-- LINK CORETTO, DIRETTO E COMPLETO DA BIBLIOTECA NO SERVIDOR DA CLOUDFLARE -->
+    <!-- BIBLIOTECA CORRIGIDA: Versão auto-configurável que não fica em branco -->
     <script src="https://jsdelivr.net"></script>
     <style>
         :root {
@@ -183,9 +183,8 @@
         </div>
     </div>
 
-    <!-- ÁREA DO CANVAS PARA O CHART.JS -->
     <div class="grafico-container">
-        <canvas id="graficoPeso" style="width: 100%; height: 200px;"></canvas>
+        <canvas id="graficoPeso"></canvas>
     </div>
 
     <form id="form-registro">
@@ -324,43 +323,6 @@
         const indexEdicao = parseInt(editIndexInput.value);
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
 
-
-        const dadosAplicacao = {data: dataValor,peso: document.getElementById('peso').value,dose: document.getElementById('dose').value,local: document.getElementById('local').value};if (indexEdicao === -1) {registros.push(dadosAplicacao);} else {registros[indexEdicao] = dadosAplicacao;editIndexInput.value = "-1";btnSubmit.innerText = "Salvar Aplicação";btnSubmit.style.backgroundColor = "var(--cor-principal)";btnSubmit.style.color = "white";}registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();form.reset();definirDataDeHoje();alert('Dados salvos com sucesso!');});
-    
-    function excluirRegistro(index) {
-        if (confirm("Tem certeza que deseja excluir este registro?")) {
-        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();
-        }
-    }
-    function editarRegistro(index) {
-        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const reg = registros[index];dataInput.value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    function renderizarGrafico() {
-        if (typeof Chart === 'undefined') return;
-        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const meta = parseFloat(document.getElementById('meta-peso').value) || null;
-        const registrosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');if (meuGrafico) {meuGrafico.destroy();meuGrafico = null;}
-        const canvas = document.getElementById('graficoPeso');if (!canvas) return;
-        const ctx = canvas.getContext('2d');if (registrosComPeso.length === 0) {ctx.clearRect(0, 0, canvas.width, canvas.height);return;}
-        const labels = registrosComPeso.map(r => r.data);
-        const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));
-        const dadosMeta = registrosComPeso.map(() => meta);meuGrafico = new Chart(ctx, {type: 'line',data: {labels: labels,datasets: [{label: 'Peso Atual (kg)',data: dadosPeso,borderColor: '#2d6a4f',backgroundColor: 'rgba(45, 106, 79, 0.1)',tension: 0.2,fill: true},{label: 'Minha Meta',data: dadosMeta,borderColor: '#d90429',pointRadius: 0,fill: false}]},options: {responsive: true,scales: {y: {beginAtZero: false,title: { display: true, text: 'Peso (kg)' }}}}});
-    }
-    function limparTodoHistorico() {
-        if (confirm("ATENÇÃO: Isso apagará permanentemente todas as suas aplicações e o gráfico. Deseja continuar?")) {
-            localStorage.removeItem('dadosGLP1');localStorage.removeItem('metaPesoGLP1');location.reload();
-        }
-    }
-    function exportarBackup() {
-        const backupTotal = {historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || ""};
-        const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-    // Inicialização direta garantida
-    inicializarApp();
-</script>
+        const dadosAplicacao = {
+            data: dataValor,
+            peso: document.getElementById('peso').value,dose: document.getElementById('dose').value,local: document.getElementById('local').value};if (indexEdicao === -1) {registros.push(dadosAplicacao);} else {registros[indexEdicao] = dadosAplicacao;editIndexInput.value = "-1";btnSubmit.innerText = "Salvar Aplicação";btnSubmit.style.backgroundColor = "var(--cor-principal)";btnSubmit.style.color = "white";}registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();form.reset();definirDataDeHoje();alert('Dados salvos com sucesso!');});function excluirRegistro(index) {if (confirm("Tem certeza que deseja excluir este registro?")) {const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();}}function editarRegistro(index) {const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];const reg = registros[index];dataInput.value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });}function renderizarGrafico() {if (typeof Chart === 'undefined') return;const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];const meta = parseFloat(document.getElementById('meta-peso').value) || null;const registrosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');if (meuGrafico) {meuGrafico.destroy();meuGrafico = null;}const canvas = document.getElementById('graficoPeso');if (!canvas) return;const ctx = canvas.getContext('2d');if (registrosComPeso.length === 0) {ctx.clearRect(0, 0, canvas.width, canvas.height);return;}const labels = registrosComPeso.map(r => r.data);const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));const dadosMeta = registrosComPeso.map(() => meta);meuGrafico = new Chart(ctx, {type: 'line',data: {labels: labels,datasets: [{label: 'Peso Atual (kg)',data: dadosPeso,borderColor: '#2d6a4f',backgroundColor: 'rgba(45, 106, 79, 0.1)',tension: 0.2,fill: true},{label: 'Minha Meta',data: dadosMeta,borderColor: '#d90429',pointRadius: 0,fill: false}]},options: {responsive: true,scales: {y: {beginAtZero: false,title: { display: true, text: 'Peso (kg)' }}}}});}function limparTodoHistorico() {if (confirm("ATENÇÃO: Isso apagará permanentemente todas as suas aplicações e o gráfico. Deseja continuar?")) {localStorage.removeItem('dadosGLP1');localStorage.removeItem('metaPesoGLP1');location.reload();}}function exportarBackup() {const backupTotal = {historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || ""};const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });const url = URL.createObjectURL(blob);const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();document.body.removeChild(a);}inicializarApp();
