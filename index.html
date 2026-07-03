@@ -184,10 +184,8 @@
         </div>
     </div>
 
-    <!-- ÁREA DO NOVO GRÁFICO IMUNE A CSP -->
-    <div class="grafico-container" id="containerGrafico">
-        <!-- O SVG dinâmico será montado aqui de forma nativa -->
-    </div>
+    <!-- ÁREA DO GRÁFICO SVG NATIVO (IMUNE A CSP) -->
+    <div class="grafico-container" id="containerGrafico"></div>
 
     <form id="form-registro">
         <input type="hidden" id="edit-index" value="-1">
@@ -214,7 +212,7 @@
         </div>
 
         <div class="campo">
-            <label for="local">Local da Aplicação:</label>
+            <label for="local">Local da Aplicacao:</label>
             <select id="local" required>
                 <option value="Abdômen Esquerdo">Abdômen Esquerdo</option>
                 <option value="Abdômen Direito">Abdômen Direito</option>
@@ -325,24 +323,29 @@
 
         const dadosAplicacao = {
             data: dataValor,
-            peso: document.getElementById('peso').value, dose: document.getElementById('dose').value,local: document.getElementById('local').value};
-            if (indexEdicao === -1) {
-                registros.push(dadosAplicacao);
-            } else {
-                registros[indexEdicao] = dadosAplicacao;editIndexInput.value = "-1";btnSubmit.innerText = "Salvar Aplicação";
-                btnSubmit.style.backgroundColor = "var(--cor-principal)";btnSubmit.style.color = "white";
-            }
-            registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));
-            localStorage.setItem('dadosGLP1', JSON.stringify(registros));
-            carregarHistorico();
-            form.reset();
-            definirDataDeHoje();
-            alert('Dados salvos com sucesso!');});
+            peso: document.getElementById('peso').value,
+            dose: document.getElementById('dose').value,
+            local: document.getElementById('local').value
+        };
+        if (indexEdicao === -1) {
+            registros.push(dadosAplicacao);
+        } else {
+            registros[indexEdicao] = dadosAplicacao;
+            editIndexInput.value = "-1";
+            btnSubmit.innerText = "Salvar Aplicação";
+            btnSubmit.style.backgroundColor = "var(--cor-principal)";
+            btnSubmit.style.color = "white";
+        }
+        registros.sort((a, b) => converterParaDataObjeto(a.data) - converterParaDataObjeto(b.data));
+        localStorage.setItem('dadosGLP1', JSON.stringify(registros));
+        carregarHistorico();
+        form.reset();
+        definirDataDeHoje();
+        alert('Dados salvos com sucesso!');});
     function excluirRegistro(index) {
         if (confirm("Tem certeza que deseja excluir este registro?")) {
-            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-            registros.splice(index, 1);
-            localStorage.setItem('dadosGLP1', JSON.stringify(registros));
+            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || []; 
+            registros.splice(index, 1);localStorage.setItem('dadosGLP1', JSON.stringify(registros));
             carregarHistorico();
         }
     }
@@ -350,55 +353,105 @@
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
         const reg = registros[index];dataInput.value = reg.data;document.getElementById('peso').value = reg.peso || '';
         document.getElementById('dose').value = reg.dose;
-        document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";
-        btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.getElementById('local').value = reg.local;
+        editIndexInput.value = index;
+        btnSubmit.innerText = "Atualizar Registro Antigo ✏️";
+        btnSubmit.style.backgroundColor = "var(--cor-alerta)";
+        btnSubmit.style.color = "#000";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+    function renderizarGrafico() {
+        const wrapper = document.getElementById('containerGrafico');
+        if (!wrapper) return;
 
-// ARQUITETURA DE RENDERIZAÇÃO EM SVG PURO E BLINDADO CONTRA ERROS
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const meta = parseFloat(document.getElementById('meta-peso').value) || 0;
+        const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
 
-function renderizarGrafico() {
-    const wrapper = document.getElementById('containerGrafico');if (!wrapper) return;
-    const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-    const meta = parseFloat(document.getElementById('meta-peso').value) || 0;
-    const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');if (dadosComPeso.length === 0) {wrapper.innerHTML = 'Insira a primeira aplicação para iniciar o gráfico.';return;}
-    const largura = 480;
-    const altura = 180;
-    const margem = 30;
-    // Mapeia os pesos para encontrar limites verticais
-    const listaPesos = dadosComPeso.map(r => parseFloat(r.peso));if (meta > 0) listaPesos.push(meta);
-    const pesoMax = Math.max(...listaPesos) + 2;
-    const pesoMin = Math.max(0, Math.min(...listaPesos) - 2);
-    const variacaoPeso = pesoMax - pesoMin || 1;
-    // Calcula espaçamento horizontal
-    const totalPontos = dadosComPeso.length;
-    const passoX = totalPontos > 1 ? (largura - margem * 2) / (totalPontos - 1) : largura - margem * 2;let coordenadasPeso = '';let pontosHtml = '';let legendasXHtml = '';dadosComPeso.forEach((r, idx) => {
-    const cx = totalPontos > 1 ? margem + idx * passoX : largura / 2;
-
-    const cy = altura - margem - ((parseFloat(r.peso) - pesoMin) / variacaoPeso) * (altura - margem * 2);coordenadasPeso += ${cx},${cy} ;pontosHtml += <circle cx="${cx}" cy="${cy}" r="4" fill="#2d6a4f" />;
-    // Exibe apenas a primeira, do meio e última legenda para não embolar na tela
-    if (idx === 0 || idx === totalPontos - 1 || (totalPontos > 2 && idx === Math.floor(totalPontos / 2))) {
-        legendasXHtml += `<text x="${cx}" y="${altura - 5}" font-size="10" fill="#666" text-anchor="middle">${r.data.substring(0,5)}</text>`;
-        // Calcula a posição da linha da meta de peso
-        let linhaMetaHtml = '';if (meta > 0) {
-            const metaY = altura - margem - ((meta - pesoMin) / variacaoPeso) * (altura - margem * 2);linhaMetaHtml = ``;
+        if (dadosComPeso.length === 0) {
+            wrapper.innerHTML = '<p style="color:#666; font-size:13px; text-align:center;">Insira a primeira aplicação para iniciar o gráfico.</p>';
+            return;
         }
-        //Constrói a estrutura estrutural do SVG limpo
-        wrapper.innerHTML = `${linhaMetaHtml}${totalPontos > 1 ? <polyline points="${coordenadasPeso}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" /> : ''}${pontosHtml}${legendasXHtml}`;
+
+        const largura = 480;
+        const altura = 180;
+        const margem = 40;
+
+        const listaPesos = dadosComPeso.map(r => parseFloat(r.peso));
+        if (meta > 0) listaPesos.push(meta);
+
+        const pesoMax = Math.max(...listaPesos) + 2;
+        const pesoMin = Math.max(0, Math.min(...listaPesos) - 2);
+        const variacaoPeso = pesoMax - pesoMin || 1;
+
+        const totalPontos = dadosComPeso.length;
+        const passoX = totalPontos > 1 ? (largura - margem * 2) / (totalPontos - 1) : largura - margem * 2;
+
+        let coordenadasPeso = '';
+        let pontosHtml = '';
+        let legendasXHtml = '';
+
+        dadosComPeso.forEach((r, idx) => {
+            const cx = totalPontos > 1 ? margem + idx * passoX : largura / 2;
+            const cy = altura - margem - ((parseFloat(r.peso) - pesoMin) / variacaoPeso) * (altura - margem * 2);
+
+            coordenadasPeso += `${cx},${cy} `;
+            pontosHtml += `<circle cx="${cx}" cy="${cy}" r="4" fill="#2d6a4f" />`;
+            
+            if (idx === 0 || idx === totalPontos - 1 || (totalPontos > 2 && idx === Math.floor(totalPontos / 2))) {
+                legendasXHtml += `<text x="${cx}" y="${altura - 10}" font-size="10" fill="#666" text-anchor="middle">${r.data.substring(0,5)}</text>`;
+            }
+        });
+
+        let linhaMetaHtml = '';
+        if (meta > 0) {
+            const metaY = altura - margem - ((meta - pesoMin) / variacaoPeso) * (altura - margem * 2);
+            linhaMetaHtml = `
+                <line x1="${margem}" y1="${metaY}" x2="${largura - margem}" y2="${metaY}" stroke="#d90429" stroke-width="2" stroke-dasharray="4" />
+                <text x="${largura - margem + 5}" y="${metaY + 4}" font-size="10" fill="#d90429" font-weight="bold">Meta</text>
+            `;
+        }
+
+        wrapper.innerHTML = `
+            <svg viewBox="0 0 ${largura} ${altura}" style="width:100%; height:auto;">
+                <line x1="${margem}" y1="${margem}" x2="${largura - margem}" y2="${margem}" stroke="#f0f0f0" />
+                <line x1="${margem}" y1="${altura - margem}" x2="${largura - margem}" y2="${altura - margem}" stroke="#e0e0e0" />
+                
+                <text x="${margem - 5}" y="${margem + 4}" font-size="10" fill="#666" text-anchor="end">${pesoMax.toFixed(0)}kg</text>
+                <text x="${margem - 5}" y="${altura - margem + 4}" font-size="10" fill="#666" text-anchor="end">${pesoMin.toFixed(0)}kg</text>
+
+                ${linhaMetaHtml}
+
+                ${totalPontos > 1 ? `<polyline points="${coordenadasPeso}" fill="none" stroke="#2d6a4f" stroke-width="3" stroke-linecap="round" />` : ''}
+                ${pontosHtml}
+
+                ${legendasXHtml}
+            </svg>
+        `;
     }
+
     function limparTodoHistorico() {
         if (confirm("ATENÇÃO: Isso apagará permanentemente todas as suas aplicações e o gráfico. Deseja continuar?")) {
-            localStorage.removeItem('dadosGLP1');localStorage.removeItem('metaPesoGLP1');location.reload();
+            localStorage.removeItem('dadosGLP1');
+            localStorage.removeItem('metaPesoGLP1');
+            location.reload();
         }
     }
+
     function exportarBackup() {
-        const backupTotal = {historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || ""};
+        const backupTotal = {
+            historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],
+            meta: localStorage.getItem('metaPesoGLP1') || ""
+        };
         const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "backup_completo_glp1.json";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
     }
-    // Inicialização direta
+
+    // Inicialização direta do ecossistema do app
     inicializarApp();
-</script>
