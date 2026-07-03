@@ -193,10 +193,16 @@
         <input type="hidden" id="edit-index" value="-1">
 
         <div class="linha-dupla">
-            <div class="campo">
-                <label for="data">Data:</label>
-                <input type="date" id="data" required>
-            </div>
+          <label for="date-field">Enter Date (DD/MM/YYYY):</label>
+          <input 
+            type="text" 
+            id="date-field" 
+            name="date" 
+            placeholder="dd/mm/yyyy" 
+            pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[12])/\d{4}" 
+            title="Please enter a date in the DD/MM/YYYY format"
+            required>
+            <button type="submit">Submit</button>
             
             <div class="campo">
                 <label for="peso">Peso Atual (kg):</label>
@@ -234,8 +240,6 @@
 </div>
 
 <script>
-    // Define a data atual por padrão
-    document.getElementById('data').valueAsDate = new Date();
 
     const form = document.getElementById('form-registro');
     const historicoDiv = document.getElementById('historico');
