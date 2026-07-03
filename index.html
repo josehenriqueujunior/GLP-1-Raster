@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Rastreador GLP-1</title>
-    <!-- Biblioteca do Gráfico -->
+    <!-- Biblioteca do Gráfico (Link alternativo oficial via Cloudflare) -->
     <script src="https://cloudflare.com"></script>
     <style>
         :root {
@@ -195,7 +195,7 @@
         <div class="linha-dupla">
             <div class="campo">
                 <label for="data">Data:</label>
-                <input type="date" id="data" required>
+                <input type="text" id="data" placeholder="DD/MM/AAAA" maxlength="10" required>
             </div>
             
             <div class="campo">
@@ -207,10 +207,9 @@
         <div class="campo">
             <label for="dose">Dose Utilizada:</label>
             <select id="dose" required>
-                <option value="0.25 mg">0.25 mg</option>
-                <option value="0.50 mg">0.50 mg</option>
-                <option value="1.0 mg">1.0 mg</option>
-                <option value="2.4 mg">2.4 mg</option>
+                <option value="2.5 mg">2.5 mg</option>
+                <option value="7.5 mg">7.5 mg</option>
+                <option value="10 mg">10 mg</option>
             </select>
         </div>
 
@@ -325,15 +324,21 @@
         if (confirm("Tem certeza que deseja excluir este registro?")) {
             const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
             registros.splice(index, 1);
-            localStorage.setItem('dadosGLP1', JSON.stringify(registros));
-        carregarHistorico();
-    }}
-    function editarRegistro(index) {const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+            localStorage.setItem('dadosGLP1', JSON.stringify(registros));carregarHistorico();
+        }
+    }
+    function editarRegistro(index) {
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
         const reg = registros[index];document.getElementById('data').value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     function renderizarGrafico() {
-        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];const meta = parseFloat(document.getElementById('meta-peso').value) || null;
-        const registrosComPeso = registros.filter(r => r.peso);const labels = registrosComPeso.map(r => formatarData(r.data));const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));
+        // Verifica se a biblioteca Chart.js foi carregada com sucesso antes de tentar desenhar
+        if (typeof Chart === 'undefined') {console.warn("Aguardando carregamento da biblioteca de gráficos...");return;}
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const meta = parseFloat(document.getElementById('meta-peso').value) || null;
+        const registrosComPeso = registros.filter(r => r.peso);
+        const labels = registrosComPeso.map(r => formatarData(r.data));
+        const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));
         const dadosMeta = registrosComPeso.map(() => meta);if (meuGrafico) {meuGrafico.destroy();}
         const canvas = document.getElementById('graficoPeso');if (!canvas) return;
         const ctx = canvas.getContext('2d');meuGrafico = new Chart(ctx, {type: 'line',data: {labels: labels,datasets: [{label: 'Peso Atual (kg)',data: dadosPeso,borderColor: '#2d6a4f',backgroundColor: 'rgba(45, 106, 79, 0.1)',tension: 0.2,fill: true},{label: 'Minha Meta',data: dadosMeta,borderColor: '#d90429',pointRadius: 0,fill: false}]},options: {responsive: true,scales: {y: {beginAtZero: false,title: { display: true, text: 'Peso (kg)' }}}}});
@@ -344,5 +349,8 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();document.body.removeChild(a);
     }
-        carregarMeta();
-        carregarHistorico();
+    // Inicializa com segurança monitorando o carregamento externo
+    window.addEventListener('load', () => {carregarMeta();carregarHistorico();});
+    // Fallback caso o evento load já tenha passado
+    carregarMeta();
+    arregarHistorico();
