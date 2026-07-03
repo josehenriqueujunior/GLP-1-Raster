@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Rastreador GLP-1</title>
+    <!-- Biblioteca do Gráfico -->
+    <script src="https://jsdelivr.net"></script>
     <style>
-        /* --- ESTILOS CSS (Altere as cores e fontes aqui) --- */
         :root {
             --cor-principal: #2d6a4f;
             --cor-fundo: #f4f9f4;
             --cor-card: #ffffff;
             --cor-texto: #1b4332;
+            --cor-perigo: #d90429;
+            --cor-alerta: #ffb703;
         }
 
         body {
@@ -25,7 +28,7 @@
 
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
             background: var(--cor-card);
             padding: 20px;
             border-radius: 12px;
@@ -35,10 +38,59 @@
         h1, h2 {
             text-align: center;
             color: var(--cor-principal);
+            margin-top: 10px;
+        }
+
+        .meta-container {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #c8e6c9;
+        }
+
+        .meta-titulo {
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .meta-input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .meta-input-group input {
+            width: 100px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 6px;
+        }
+
+        .grafico-container {
+            margin-bottom: 25px;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #eee;
         }
 
         .campo {
             margin-bottom: 15px;
+        }
+
+        .linha-dupla {
+            display: flex;
+            gap: 15px;
+        }
+
+        .linha-dupla .campo {
+            flex: 1;
         }
 
         label {
@@ -78,7 +130,7 @@
 
         .historico-lista {
             margin-top: 20px;
-            max-height: 300px;
+            max-height: 350px;
             overflow-y: auto;
         }
 
@@ -90,6 +142,31 @@
             margin-bottom: 10px;
             font-size: 14px;
         }
+
+        .botoes-acoes {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            justify-content: flex-end;
+        }
+
+        .btn-acao {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-bottom: 0;
+            border-radius: 4px;
+            color: white;
+        }
+
+        .btn-editar {
+            background-color: var(--cor-alerta);
+            color: #212529;
+        }
+
+        .btn-excluir {
+            background-color: var(--cor-perigo);
+        }
     </style>
 </head>
 <body>
@@ -97,11 +174,34 @@
 <div class="container">
     <h1>💉 Registro GLP-1</h1>
     
+    <!-- SEÇÃO DA META DE PESO -->
+    <div class="meta-container">
+        <div class="meta-titulo">🎯 Minha Meta de Peso</div>
+        <div class="meta-input-group">
+            <input type="number" id="meta-peso" step="0.1" placeholder="Ex: 70.0" onchange="atualizarMetaDoGrafico()">
+            <span>kg</span>
+        </div>
+    </div>
+
+    <!-- GRÁFICO DE EVOLUÇÃO -->
+    <div class="grafico-container">
+        <canvas id="graficoPeso"></canvas>
+    </div>
+
     <!-- FORMULÁRIO DE ENTRADA -->
     <form id="form-registro">
-        <div class="campo">
-            <label for="data">Data da Aplicação:</label>
-            <input type="date" id="data" required>
+        <input type="hidden" id="edit-index" value="-1">
+
+        <div class="linha-dupla">
+            <div class="campo">
+                <label for="data">Data:</label>
+                <input type="date" id="data" required>
+            </div>
+            
+            <div class="campo">
+                <label for="peso">Peso Atual (kg):</label>
+                <input type="number" id="peso" step="0.1" placeholder="Ex: 82.5" required>
+            </div>
         </div>
 
         <div class="campo">
@@ -125,91 +225,124 @@
             </select>
         </div>
 
-        <button type="submit" class="btn-salvar">Salvar Aplicação</button>
+        <button type="submit" id="btn-submit" class="btn-salvar">Salvar Aplicação</button>
     </form>
 
     <button onclick="exportarBackup()" class="btn-backup">💾 Baixar Backup dos Dados</button>
 
-    <!-- HISTÓRICO -->
     <h2>Histórico Pessoal</h2>
-    <div id="historico" class="historico-lista">
-        <!-- Os registros salvos vão aparecer aqui dentro via JS -->
-    </div>
+    <div id="historico" class="historico-lista"></div>
 </div>
 
 <script>
-    // --- LÓGICA JAVASCRIPT (Gerencia os dados e o LocalStorage) ---
-
-    // Define a data de hoje automaticamente no formulário ao abrir a página
     document.getElementById('data').valueAsDate = new Date();
 
     const form = document.getElementById('form-registro');
     const historicoDiv = document.getElementById('historico');
+    const editIndexInput = document.getElementById('edit-index');
+    const btnSubmit = document.getElementById('btn-submit');
+    let meuGrafico = null;
 
-    // Função para carregar dados do LocalStorage e exibir na tela
+    function carregarMeta() {
+        const metaSalva = localStorage.getItem('metaPesoGLP1');
+        if (metaSalva) {
+            document.getElementById('meta-peso').value = metaSalva;
+        }
+    }
+
+    function atualizarMetaDoGrafico() {
+        const valorMeta = document.getElementById('meta-peso').value;
+        localStorage.setItem('metaPesoGLP1', valorMeta);
+        renderizarGrafico();
+    }
+
     function carregarHistorico() {
         historicoDiv.innerHTML = '';
-        // Busca os dados existentes ou cria uma lista vazia se não houver nenhum
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const registrosExibicao = [...registros].reverse();
 
-        // Exibe do mais recente para o mais antigo
-        registros.reverse().forEach(reg => {
+        registrosExibicao.forEach((reg, indexInvertido) => {
+            const indiceReal = registros.length - 1 - indexInvertido;
             const div = document.createElement('div');
             div.className = 'item-aplicacao';
+            const exibicaoPeso = reg.peso ? `| <strong>Peso:</strong> ${reg.peso} kg` : '';
+
             div.innerHTML = `
-                <strong>Data:</strong> ${formatarData(reg.data)} <br>
-                <strong>Dose:</strong> ${reg.dose} | <strong>Local:</strong> ${reg.local}
+                <div>
+                    <strong>Data:</strong> ${formatarData(reg.data)} ${exibicaoPeso} <br>
+                    <strong>Dose:</strong> ${reg.dose} | <strong>Local:</strong> ${reg.local}
+                </div>
+                <div class="botoes-acoes">
+                    <button type="button" class="btn-acao btn-editar" onclick="editarRegistro(${indiceReal})">✏️ Editar</button>
+                    <button type="button" class="btn-acao btn-excluir" onclick="excluirRegistro(${indiceReal})">🗑️ Excluir</button>
+                </div>
             `;
             historicoDiv.appendChild(div);
         });
+
+        renderizarGrafico();
     }
 
-    // Função auxiliar para formatar a data padrão (AAAA-MM-DD) para o formato brasileiro (DD/MM/AAAA)
     function formatarData(dataString) {
+        if (!dataString) return '';
         const [ano, mes, dia] = dataString.split('-');
         return `${dia}/${mes}/${ano}`;
     }
 
-    // Evento de envio do formulário
     form.addEventListener('submit', function(e) {
-        e.preventDefault(); // Evita que a página recarregue ao enviar
+        e.preventDefault();
 
-        const novaAplicacao = {
+        const indexEdicao = parseInt(editIndexInput.value);
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+
+        const dadosAplicacao = {
             data: document.getElementById('data').value,
+            peso: document.getElementById('peso').value,
             dose: document.getElementById('dose').value,
             local: document.getElementById('local').value
         };
 
-        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        registros.push(novaAplicacao); // Adiciona o novo registro à lista
-
-        localStorage.setItem('dadosGLP1', JSON.stringify(registros)); // Salva de volta no LocalStorage
-        
-        carregarHistorico(); // Atualiza a tela
-        alert('Aplicação registrada com sucesso!');
-    });
-
-    // Função para gerar o arquivo de backup para download seguro
-    function exportarBackup() {
-        const dados = localStorage.getItem('dadosGLP1');
-        if (!dados || dados === "[]") {
-            alert("Não há dados para exportar ainda.");
-            return;
+        if (indexEdicao === -1) {
+            registros.push(dadosAplicacao);
+        } else {
+            registros[indexEdicao] = dadosAplicacao;
+            editIndexInput.value = "-1";
+            btnSubmit.innerText = "Salvar Aplicação";
+            btnSubmit.style.backgroundColor = "var(--cor-principal)";
+            btnSubmit.style.color = "white";
         }
 
-        const blob = new Blob([dados], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "backup_glp1.json";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        registros.sort((a, b) => new Date(a.data) - new Date(b.data));
+        localStorage.setItem('dadosGLP1', JSON.stringify(registros));
+        
+        carregarHistorico();
+        form.reset();
+        document.getElementById('data').valueAsDate = new Date();
+        alert('Dados salvos com sucesso!');
+    });
+
+    function excluirRegistro(index) {
+        if (confirm("Tem certeza que deseja excluir este registro?")) {
+            const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+            registros.splice(index, 1);
+            localStorage.setItem('dadosGLP1', JSON.stringify(registros));
+        carregarHistorico();
+    }}
+    function editarRegistro(index) {const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const reg = registros[index];document.getElementById('data').value = reg.data;document.getElementById('peso').value = reg.peso || '';document.getElementById('dose').value = reg.dose;document.getElementById('local').value = reg.local;editIndexInput.value = index;btnSubmit.innerText = "Atualizar Registro Antigo ✏️";btnSubmit.style.backgroundColor = "var(--cor-alerta)";btnSubmit.style.color = "#000";window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-
-    // Executa ao abrir a página pela primeira vez
-    carregarHistorico();
-</script>
-
-</body>
-</html>
+    function renderizarGrafico() {
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];const meta = parseFloat(document.getElementById('meta-peso').value) || null;
+        const registrosComPeso = registros.filter(r => r.peso);const labels = registrosComPeso.map(r => formatarData(r.data));const dadosPeso = registrosComPeso.map(r => parseFloat(r.peso));
+        const dadosMeta = registrosComPeso.map(() => meta);if (meuGrafico) {meuGrafico.destroy();}
+        const canvas = document.getElementById('graficoPeso');if (!canvas) return;
+        const ctx = canvas.getContext('2d');meuGrafico = new Chart(ctx, {type: 'line',data: {labels: labels,datasets: [{label: 'Peso Atual (kg)',data: dadosPeso,borderColor: '#2d6a4f',backgroundColor: 'rgba(45, 106, 79, 0.1)',tension: 0.2,fill: true},{label: 'Minha Meta',data: dadosMeta,borderColor: '#d90429',pointRadius: 0,fill: false}]},options: {responsive: true,scales: {y: {beginAtZero: false,title: { display: true, text: 'Peso (kg)' }}}}});
+    }
+    function exportarBackup() {
+        const backupTotal = {historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || ""};
+        const blob = new Blob([JSON.stringify(backupTotal)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');a.href = url;a.download = "backup_completo_glp1.json";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    }
+        carregarMeta();
+        carregarHistorico();
