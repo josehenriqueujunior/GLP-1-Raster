@@ -341,7 +341,7 @@
 
     function calcularMetricasSaude() {
         // 1. Corrigido para buscar a chave correta do nosso localStorage anterior
-        const dadosSalvos = JSON.parse(localStorage.getItem('glp1_data')) || { applications: [], bodyStats: [] };
+        const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { applications: [], bodyStats: [] };
         const registrosCorporais = dadosSalvos.bodyStats || [];
 
         // Filtra apenas os registros que possuem peso válido
