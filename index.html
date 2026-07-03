@@ -340,13 +340,10 @@
     }
 
     function calcularMetricasSaude() {
-        // 1. Corrigido para buscar a chave correta do nosso localStorage anterior
-        const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { applications: [], bodyStats: [] };
-        const registrosCorporais = dadosSalvos.bodyStats || [];
+        // Busca os dados da chave correta 'dadosGLP1'
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
 
-        // Filtra apenas os registros que possuem peso válido
-        const dadosComPeso = registrosCorporais.filter(r => r.weight && String(r.weight).trim() !== '');
-        
         const painelImc = document.getElementById('painel-imc');
         const painelAgua = document.getElementById('painel-agua');
 
@@ -358,7 +355,7 @@
         }
 
         // O primeiro item [0] é o mais recente porque usamos .unshift() ao salvar
-        const pesoAtual = parseFloat(dadosComPeso[0].weight);
+        const pesoAtual = parseFloat(dadosComPeso[dadosComPeso.length - 1].peso);
         const alturaCm = parseFloat(document.getElementById('altura-usuario').value) || 0;
 
         // Cálculo da Água (35ml por kg corporal)
