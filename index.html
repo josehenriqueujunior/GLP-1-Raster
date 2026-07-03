@@ -315,8 +315,10 @@
         if (!stringData) return new Date();
         const partes = stringData.split('/');
         if (partes.length !== 3) return new Date();
-        // Converte DD/MM/AAAA para um objeto Date válido (Ano, Mês-1, Dia)
-        return new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+        
+        // Destruturação: extrai as variáveis diretamente sem usar índices numéricos
+        const [diaStr, mesStr, anoStr] = partes;
+        return new Date(parseInt(anoStr), parseInt(mesStr) - 1, parseInt(diaStr))
     }
 
     form.addEventListener('submit', function(e) {
