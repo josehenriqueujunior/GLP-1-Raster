@@ -317,9 +317,6 @@
 </div>
 
 <script>
-    const dataInput = document.getElementById('data');
-    const doseInput = document.getElementById('dose');
-    const frequenciaInput = document.getElementById('frequencia');
     const form = document.getElementById('form-registro');
     const historicoDiv = document.getElementById('historico');
     const editIndexInput = document.getElementById('edit-index');
@@ -343,7 +340,8 @@
         const d = String(hoje.getDate()).padStart(2, '0');
         const m = String(hoje.getMonth() + 1).padStart(2, '0');
         const a = hoje.getFullYear();
-        dataInput.value = `${d}/${m}/${a}`;
+
+        document.getElementById('data').value = `${d}/${m}/${a}`;
 
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
         
@@ -351,8 +349,8 @@
         if (registros.length > 0) {
             const reg = registros[registros.length - 1];
             
-            doseInput.value = reg.dose || '';
-            frequenciaInput.value = reg.frequencia || 7;
+            document.getElementById('dose').value = reg.dose || '';
+            document.getElementById('frequencia') = reg.frequencia || 7;
         }
     }
 
