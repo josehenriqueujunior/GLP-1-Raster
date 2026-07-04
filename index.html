@@ -504,6 +504,7 @@
         document.getElementById('peso').value = reg.peso || '';
         document.getElementById('dose').value = reg.dose;
         document.getElementById('local').value = reg.local;
+        document.getElementById('frequencia').value = reg.frequencia;
 
         editIndexInput.value = index;
         btnSubmit.innerText = "Atualizar Registro Antigo ✏️";
@@ -670,11 +671,11 @@
     function calcularMetaPeso() {
         const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { bodyStats: [] };
         const registrosCorporais = dadosSalvos.bodyStats || [];
-        const painelMeta = document.getElementById('painel-meta-peso');
+        const painelMeta = document.getElementById('meta-peso');
         const inputMeta = document.getElementById('painel-quantidade-meta');
-        
+
         // Obtém o valor digitado na meta de peso
-        const pesoMeta = parseFloat(inputMeta.value) || 0;
+        const pesoMeta = parseFloat(painelMeta.value) || 0;
 
         // Filtra apenas registros com peso válido
         const dadosComPeso = registrosCorporais.filter(r => r.peso && String(r.peso).trim() !== '');
@@ -686,24 +687,12 @@
         }
 
         // Pega o peso mais atualizado lançado pelo usuário (primeiro elemento por conta do unshift)
-        const pesoAtual = parseFloat(dadosComPeso[0].peso);
+        const pesoAtual = parseFloat(dadosComPeso[dadosComPeso.length - 1].peso);
 
         // Calcula os quilos que restam perder ou ganhar
         const diferencaKg = pesoAtual - pesoMeta;
 
-        if (diferencaKg > 0) {
-            // Usuário está acima da meta (precisa perder)
-            painelMeta.innerHTML = `Faltam ${diferencaKg.toFixed(1)} kg <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Para atingir o objetivo de ${pesoMeta.toFixed(1)}kg</span>`;
-            painelMeta.style.color = '#ef4444'; // Cor de alerta/atenção
-        } else if (diferencaKg === 0) {
-            // Atingiu exatamente a meta
-            painelMeta.innerHTML = `Meta atingida! 🎉 <br><span style="font-size: 12px; color: #22c55e; font-weight: bold;">Parabéns! Mantendo ${pesoMeta.toFixed(1)}kg</span>`;
-            painelMeta.style.color = '#22c55e'; // Verde sucesso
-        } else {
-            // Peso atual está menor que a meta
-            painelMeta.innerHTML = `${Math.abs(diferencaKg).toFixed(1)} kg abaixo da meta <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Alvo: ${pesoMeta.toFixed(1)}kg</span>`;
-            painelMeta.style.color = '#3b82f6'; // Azul informativo
-        }
+        inputMeta.innerHTML = diferencaKg;
     }
 
     function exportarBackup() {
