@@ -318,6 +318,8 @@
 
 <script>
     const dataInput = document.getElementById('data');
+    const doseInput = document.getElementById('dose');
+    const frequenciaInput = document.getElementById('frequencia');
     const form = document.getElementById('form-registro');
     const historicoDiv = document.getElementById('historico');
     const editIndexInput = document.getElementById('edit-index');
@@ -331,17 +333,24 @@
     });
 
     function inicializarApp() {
-        definirDataDeHoje();
         carregarConfiguracoes();
         carregarHistorico();
+        definirDataDeHojeUltimaDoseUltimaFrequencia();
     }
 
-    function definirDataDeHoje() {
+    function definirDataDeHojeUltimaDoseUltimaFrequencia() {
         const hoje = new Date();
         const d = String(hoje.getDate()).padStart(2, '0');
         const m = String(hoje.getMonth() + 1).padStart(2, '0');
         const a = hoje.getFullYear();
         dataInput.value = `${d}/${m}/${a}`;
+
+        const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
+        const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
+        const reg = dadosComPeso[dadosComPeso.length - 1];
+
+        doseInput = reg.dose;
+        frequenciaInput.value = reg.frequencia || 7;
     }
 
     function carregarConfiguracoes() {
