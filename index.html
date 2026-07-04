@@ -347,13 +347,11 @@
         dataInput.value = `${yyyy}-${mm}-${dd}`;
 
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
-        const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
         
-        // 2. Correção de segurança: impede travamento caso não haja registros gravados
-        if (dadosComPeso.length > 0) {
-            const reg = dadosComPeso[dadosComPeso.length - 1];
+        // CORREÇÃO: Não filtre por peso aqui, pegue a última aplicação direto da lista geral
+        if (registros.length > 0) {
+            const reg = registros[registros.length - 1];
             
-            // 3. Correção do preenchimento: adicionado .value na dose
             doseInput.value = reg.dose || '';
             frequenciaInput.value = reg.frequencia || 7;
         }
