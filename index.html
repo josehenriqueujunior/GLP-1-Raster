@@ -467,7 +467,7 @@
             peso: document.getElementById('peso').value,
             dose: document.getElementById('dose').value,
             local: document.getElementById('local').value,
-            frequencia: document.getElementById('frequencia').value
+            frequencia: document.getElementById('frequencia').value || 7
         };
 
         if (indexEdicao === -1) {
@@ -506,7 +506,7 @@
         document.getElementById('peso').value = reg.peso || '';
         document.getElementById('dose').value = reg.dose;
         document.getElementById('local').value = reg.local;
-        document.getElementById('frequencia').value = reg.frequencia;
+        document.getElementById('frequencia').value = reg.frequencia || 7;
 
         editIndexInput.value = index;
         btnSubmit.innerText = "Atualizar Registro Antigo ✏️";
