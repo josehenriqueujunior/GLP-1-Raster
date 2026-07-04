@@ -420,20 +420,28 @@
         registrosExibicao.forEach((reg, indexInvertido) => {
             const indiceReal = registros.length - 1 - indexInvertido;
             const div = document.createElement('div');
+            
+            // Estiliza o container do item para alinhar texto e botões horizontalmente
             div.className = 'item-aplicacao';
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '8px 10px';
+            div.style.borderBottom = '1px solid #e2e8f0';
+
             const exibicaoPeso = reg.peso ? `| <strong>Peso:</strong> ${reg.peso} kg` : '';
-            const exibicaoFrequencia = reg.frequencia ? `| <strong>Frequencia:</strong> ${reg.frequencia} dias` : '7 dias';
+            const exibicaoFrequencia = reg.frequencia ? `<strong>Frequência:</strong> ${reg.frequencia} dias` : '7 dias';
 
             div.innerHTML = `
-                <div>
+                <div style="font-size: 0.9rem; line-height: 1.4; flex-grow: 1;">
                     <strong>Data:</strong> ${reg.data} ${exibicaoPeso} <br>
-                    <strong>Dose:</strong> ${reg.dose} <br>
-                    ${exibicaoFrequencia} <br>
+                    <strong>Dose:</strong> ${reg.dose} | ${exibicaoFrequencia} <br>
                     <strong>Local:</strong> ${reg.local}
                 </div>
-                <div class="botoes-acoes">
-                    <button type="button" class="btn-acao btn-editar" onclick="editarRegistro(${indiceReal})">✏️ Editar</button>
-                    <button type="button" class="btn-acao btn-excluir" onclick="excluirRegistro(${indiceReal})">🗑️ Excluir</button>
+                <div class="botoes-acoes" style="display: flex; gap: 8px; margin-left: 10px;">
+                    <!-- Botões discretos apenas com o ícone, sem bordas pesadas ou fundos escuros -->
+                    <button type="button" class="btn-acao btn-editar" onclick="editarRegistro(${indiceReal})" style="background: none; border: none; cursor: pointer; padding: 5px; font-size: 1.1rem; opacity: 0.7;" title="Editar">✏️</button>
+                    <button type="button" class="btn-acao btn-excluir" onclick="excluirRegistro(${indiceReal})" style="background: none; border: none; cursor: pointer; padding: 5px; font-size: 1.1rem; opacity: 0.7;" title="Excluir">🗑️</button>
                 </div>
             `;
             historicoDiv.appendChild(div);
