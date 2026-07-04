@@ -339,18 +339,24 @@
     }
 
     function definirDataDeHojeUltimaDoseUltimaFrequencia() {
+        // 1. Correção da Data: formato universal aceito por elementos do tipo data
         const hoje = new Date();
-        const d = String(hoje.getDate()).padStart(2, '0');
-        const m = String(hoje.getMonth() + 1).padStart(2, '0');
-        const a = hoje.getFullYear();
-        dataInput.value = `${d}/${m}/${a}`;
+        const yyyy = hoje.getFullYear();
+        const mm = String(hoje.getMonth() + 1).padStart(2, '0');
+        const dd = String(hoje.getDate()).padStart(2, '0');
+        dataInput.value = `${yyyy}-${mm}-${dd}`;
 
         const registros = JSON.parse(localStorage.getItem('dadosGLP1')) || [];
         const dadosComPeso = registros.filter(r => r.peso && String(r.peso).trim() !== '');
-        const reg = dadosComPeso[dadosComPeso.length - 1];
-
-        doseInput = reg.dose;
-        frequenciaInput.value = reg.frequencia || 7;
+        
+        // 2. Correção de segurança: impede travamento caso não haja registros gravados
+        if (dadosComPeso.length > 0) {
+            const reg = dadosComPeso[dadosComPeso.length - 1];
+            
+            // 3. Correção do preenchimento: adicionado .value na dose
+            doseInput.value = reg.dose || '';
+            frequenciaInput.value = reg.frequencia || 7;
+        }
     }
 
     function carregarConfiguracoes() {
