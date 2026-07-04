@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Rastreador GLP-1</title>  
+    <title>Meu Rastreador GLP-1</title> 
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -658,6 +658,8 @@
         const diferencaTempo = dataProxima - agora;
         const diasRestantes = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
 
+        console.log(diasRestantes);
+        
         // Define o texto informativo baseado no prazo
         if (diasRestantes > 0) {
             painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Faltam ${diasRestantes} dia(s)</span>`;
@@ -691,6 +693,8 @@
 
         // Calcula os quilos que restam perder ou ganhar
         const diferencaKg = pesoAtual - pesoMeta;
+
+        console.log(diferencaKg);
 
         painelKgFaltante.innerHTML = diferencaKg;
     }
