@@ -422,11 +422,14 @@
             const div = document.createElement('div');
             div.className = 'item-aplicacao';
             const exibicaoPeso = reg.peso ? `| <strong>Peso:</strong> ${reg.peso} kg` : '';
+            const exibicaoFrequencia = reg.frequencia ? `| <strong>Frequencia:</strong> ${reg.frequencia} dias` : '7 dias';
 
             div.innerHTML = `
                 <div>
                     <strong>Data:</strong> ${reg.data} ${exibicaoPeso} <br>
-                    <strong>Dose:</strong> ${reg.dose} | <strong>Local:</strong> ${reg.local}
+                    <strong>Dose:</strong> ${reg.dose} <br>
+                    ${exibicaoFrequencia} <br>
+                    <strong>Local:</strong> ${reg.local}
                 </div>
                 <div class="botoes-acoes">
                     <button type="button" class="btn-acao btn-editar" onclick="editarRegistro(${indiceReal})">✏️ Editar</button>
