@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Rastreador GLP-1</title>
+    <title>Meu Rastreador GLP-1</title> 
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -464,7 +464,8 @@
             data: dataValor,
             peso: document.getElementById('peso').value,
             dose: document.getElementById('dose').value,
-            local: document.getElementById('local').value
+            local: document.getElementById('local').value,
+            frequencia: document.getElementById('frequencia').value
         };
 
         if (indexEdicao === -1) {
@@ -666,7 +667,7 @@
         }
     }
 
-        function calcularMetaPeso() {
+    function calcularMetaPeso() {
         const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { bodyStats: [] };
         const registrosCorporais = dadosSalvos.bodyStats || [];
         const painelMeta = document.getElementById('painel-meta-peso');
@@ -676,7 +677,7 @@
         const pesoMeta = parseFloat(inputMeta.value) || 0;
 
         // Filtra apenas registros com peso válido
-        const dadosComPeso = registrosCorporais.filter(r => r.weight && String(r.weight).trim() !== '');
+        const dadosComPeso = registrosCorporais.filter(r => r.peso && String(r.peso).trim() !== '');
 
         if (dadosComPeso.length === 0 || pesoMeta === 0) {
             painelMeta.innerText = "Defina o peso e a meta";
@@ -685,7 +686,7 @@
         }
 
         // Pega o peso mais atualizado lançado pelo usuário (primeiro elemento por conta do unshift)
-        const pesoAtual = parseFloat(dadosComPeso[0].weight);
+        const pesoAtual = parseFloat(dadosComPeso[0].peso);
 
         // Calcula os quilos que restam perder ou ganhar
         const diferencaKg = pesoAtual - pesoMeta;
