@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Rastreador GLP-1</title>  
+    <title>Meu Rastreador GLP-1</title>
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -212,7 +212,7 @@
 <body>
 
 <div class="container">
-    <h1>💉 Meu Registro GLP-1</h1>
+    <h1>💉 Registro GLP-1</h1>
     
     <div class="meta-container">
         <div class="linha-meta">
@@ -243,13 +243,13 @@
                 <div id="painel-agua" class="painel-val">-</div>
             </div>
         </div>
-        <div class="paineis-saude2">
-            <div class="painel-box2">
-                <div class="meta-titulo2">Próxima Aplicação</div>
+        <div class="paineis-saude">
+            <div class="painel-box">
+                <div class="meta-titulo">Próxima Aplicação</div>
                 <div id="painel-proxima-aplicacao" class="painel-val">-</div>
             </div>
-            <div class="painel-box2">
-                <div class="meta-titulo2">KG Faltante</div>
+            <div class="painel-box">
+                <div class="meta-titulo">KG Faltante</div>
                 <div id="painel-quantidade-meta" class="painel-val">-</div>
             </div>
         </div>
@@ -630,7 +630,7 @@
     function calcularPrazoProximaDose() {
         const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { applications: [] };
         const aplicacoes = dadosSalvos.applications || [];
-        const painelProximaDose = document.getElementById('painel-proxima-dose');
+        const painelProximaDose = document.getElementById('painel-proxima-aplicacao');
 
         if (aplicacoes.length === 0) {
             painelProximaDose.innerText = "Nenhuma aplicação registrada";
@@ -670,7 +670,7 @@
         const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { bodyStats: [] };
         const registrosCorporais = dadosSalvos.bodyStats || [];
         const painelMeta = document.getElementById('painel-meta-peso');
-        const inputMeta = document.getElementById('bodyGoal');
+        const inputMeta = document.getElementById('painel-quantidade-meta');
         
         // Obtém o valor digitado na meta de peso
         const pesoMeta = parseFloat(inputMeta.value) || 0;
