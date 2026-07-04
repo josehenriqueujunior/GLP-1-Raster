@@ -632,25 +632,23 @@
     }
 
     function calcularPrazoProximaDose() {
-        const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { applications: [] };
-        const aplicacoes = dadosSalvos.applications || [];
+        const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { bodyStats: [] };
+        const registrosCorporais = dadosSalvos.bodyStats || [];
         const painelProximaDose = document.getElementById('painel-proxima-aplicacao');
+        const dadosComPeso = registrosCorporais.filter(r => r.peso && String(r.peso).trim() !== '');
 
-        if (aplicacoes.length === 0) {
+        if (dadosComPeso.length === 0) {
             painelProximaDose.innerText = "Nenhuma aplicação registrada";
             return;
         }
 
-        // Pega a última aplicação feita (primeira posição do array por conta do unshift)
-        const ultimaAplicacao = aplicacoes[0];
-        
-        // Obtém os dias selecionados naquela aplicação (caso não exista no histórico antigo, assume 7 dias por padrão)
-        const diasFrequencia = parseInt(ultimaAplicacao.frequency) || 7;
+        const ultimaAplicacao = parseFloat(dadosComPeso[dadosComPeso.length - 1].data);
+        const frequencia = parseInt(dadosComPeso[dadosComPeso.length - 1].frequencia) || 7;
         
         // Calcula a data alvo somando os dias de frequência
         const dataUltima = new Date(ultimaAplicacao.date);
         const dataProxima = new Date(dataUltima.getTime());
-        dataProxima.setDate(dataUltima.getDate() + diasFrequencia);
+        dataProxima.setDate(dataUltima.getDate() + frequencia);
 
         // Formata a data para o padrão brasileiro de exibição
         const dataFormatadaBR = dataProxima.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
@@ -674,7 +672,7 @@
         const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { bodyStats: [] };
         const registrosCorporais = dadosSalvos.bodyStats || [];
         const painelMeta = document.getElementById('meta-peso');
-        const inputMeta = document.getElementById('painel-quantidade-meta');
+        const painelKgFaltante = document.getElementById('painel-quantidade-meta');
 
         // Obtém o valor digitado na meta de peso
         const pesoMeta = parseFloat(painelMeta.value) || 0;
@@ -694,7 +692,7 @@
         // Calcula os quilos que restam perder ou ganhar
         const diferencaKg = pesoAtual - pesoMeta;
 
-        inputMeta.innerHTML = diferencaKg;
+        painelKgFaltante.innerHTML = diferencaKg;
     }
 
     function exportarBackup() {
