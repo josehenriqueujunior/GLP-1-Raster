@@ -243,6 +243,16 @@
                 <div id="painel-agua" class="painel-val">-</div>
             </div>
         </div>
+        <div class="paineis-saude2">
+            <div class="painel-box2">
+                <div class="meta-titulo2">Próxima Aplicação</div>
+                <div id="painel-proxima-aplicacao" class="painel-val">-</div>
+            </div>
+            <div class="painel-box2">
+                <div class="meta-titulo2">KG Faltante</div>
+                <div id="painel-quantidade-meta" class="painel-val">-</div>
+            </div>
+        </div>
     </div>
 
     <div class="grafico-container" id="containerGrafico"></div>
@@ -269,6 +279,15 @@
                 <option value="5 mg">5 mg</option>
                 <option value="7.5 mg">7.5 mg</option>
                 <option value="10 mg">10 mg</option>
+            </select>
+        </div>
+
+        <div class="campo">
+            <label for="frequencia">Frequência:</label>
+            <select id="frequencia" required>
+                <option value="7">7</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
             </select>
         </div>
 
@@ -570,42 +589,122 @@
             location.reload();
         }
     }
-    function importarBackupJSON(input) {
-    const arquivo = input.files[0];
-    if (!arquivo) return;
 
-    const leitor = new FileReader();
-    
-    leitor.onload = function(evento) {
-        try {
-            // Converte o texto do arquivo de volta para um objeto JavaScript
-            const dadosImportados = JSON.parse(evento.target.result);
+    function importarBackupJSON(input) {
+        const arquivo = input.files[0];
+        if (!arquivo) return;
+
+        const leitor = new FileReader();
+        
+        leitor.onload = function(evento) {
+            try {
+                    // Converte o texto do arquivo de volta para um objeto JavaScript
+                    const dadosImportados = JSON.parse(evento.target.result);
+                    
+                    // Valida se o arquivo possui a estrutura correta de chaves
+                    if (dadosImportados.applications && dadosImportados.bodyStats) {
+                        
+                        // Grava os dados importados no localStorage do navegador
+                        localStorage.setItem('dadosGLP1', JSON.stringify(dadosImportados));
+                        
+                        // Recarrega as funções da sua tela para atualizar os dados visualmente
+                        if (typeof renderAll === "function") renderAll(); 
+                        if (typeof calcularMetricasSaude === "function") calcularMetricasSaude();
+                        
+                        alert("Backup carregado e atualizado com sucesso! 🎉");
+                    } else {
+                        alert("Erro: O arquivo selecionado não possui um formato de backup válido do sistema.");
+                    }
+                } catch (erro) {
+                    alert("Erro crítico: Não foi possível ler o arquivo. Certifique-se de que é um arquivo .json válido.");
+                }
+        };
+        
+            // Inicia a leitura do arquivo como texto
+            leitor.readAsText(arquivo);
             
-            // Valida se o arquivo possui a estrutura correta de chaves
-            if (dadosImportados.applications && dadosImportados.bodyStats) {
-                
-                // Grava os dados importados no localStorage do navegador
-                localStorage.setItem('glp1_data', JSON.stringify(dadosImportados));
-                
-                // Recarrega as funções da sua tela para atualizar os dados visualmente
-                if (typeof renderAll === "function") renderAll(); 
-                if (typeof calcularMetricasSaude === "function") calcularMetricasSaude();
-                
-                alert("Backup carregado e atualizado com sucesso! 🎉");
-            } else {
-                alert("Erro: O arquivo selecionado não possui um formato de backup válido do sistema.");
-            }
-        } catch (erro) {
-            alert("Erro crítico: Não foi possível ler o arquivo. Certifique-se de que é um arquivo .json válido.");
+            // Limpa o input para permitir subir o mesmo arquivo novamente se necessário
+            input.value = '';
+    }
+
+    function calcularPrazoProximaDose() {
+        const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { applications: [] };
+        const aplicacoes = dadosSalvos.applications || [];
+        const painelProximaDose = document.getElementById('painel-proxima-dose');
+
+        if (aplicacoes.length === 0) {
+            painelProximaDose.innerText = "Nenhuma aplicação registrada";
+            return;
         }
-    };
-    
-    // Inicia a leitura do arquivo como texto
-    leitor.readAsText(arquivo);
-    
-    // Limpa o input para permitir subir o mesmo arquivo novamente se necessário
-    input.value = '';
-}
+
+        // Pega a última aplicação feita (primeira posição do array por conta do unshift)
+        const ultimaAplicacao = aplicacoes[0];
+        
+        // Obtém os dias selecionados naquela aplicação (caso não exista no histórico antigo, assume 7 dias por padrão)
+        const diasFrequencia = parseInt(ultimaAplicacao.frequency) || 7;
+        
+        // Calcula a data alvo somando os dias de frequência
+        const dataUltima = new Date(ultimaAplicacao.date);
+        const dataProxima = new Date(dataUltima.getTime());
+        dataProxima.setDate(dataUltima.getDate() + diasFrequencia);
+
+        // Formata a data para o padrão brasileiro de exibição
+        const dataFormatadaBR = dataProxima.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        
+        // Calcula a diferença de tempo em relação a hoje
+        const agora = new Date();
+        const diferencaTempo = dataProxima - agora;
+        const diasRestantes = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
+
+        // Define o texto informativo baseado no prazo
+        if (diasRestantes > 0) {
+            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Faltam ${diasRestantes} dia(s)</span>`;
+        } else if (diasRestantes === 0) {
+            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #f59e0b; font-weight: bold;">É HOJE! 💉</span>`;
+        } else {
+            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #ef4444; font-weight: bold;">Atrasada há ${Math.abs(diasRestantes)} dia(s) ⚠️</span>`;
+        }
+    }
+
+        function calcularMetaPeso() {
+        const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1')) || { bodyStats: [] };
+        const registrosCorporais = dadosSalvos.bodyStats || [];
+        const painelMeta = document.getElementById('painel-meta-peso');
+        const inputMeta = document.getElementById('bodyGoal');
+        
+        // Obtém o valor digitado na meta de peso
+        const pesoMeta = parseFloat(inputMeta.value) || 0;
+
+        // Filtra apenas registros com peso válido
+        const dadosComPeso = registrosCorporais.filter(r => r.weight && String(r.weight).trim() !== '');
+
+        if (dadosComPeso.length === 0 || pesoMeta === 0) {
+            painelMeta.innerText = "Defina o peso e a meta";
+            painelMeta.style.color = 'inherit';
+            return;
+        }
+
+        // Pega o peso mais atualizado lançado pelo usuário (primeiro elemento por conta do unshift)
+        const pesoAtual = parseFloat(dadosComPeso[0].weight);
+
+        // Calcula os quilos que restam perder ou ganhar
+        const diferencaKg = pesoAtual - pesoMeta;
+
+        if (diferencaKg > 0) {
+            // Usuário está acima da meta (precisa perder)
+            painelMeta.innerHTML = `Faltam ${diferencaKg.toFixed(1)} kg <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Para atingir o objetivo de ${pesoMeta.toFixed(1)}kg</span>`;
+            painelMeta.style.color = '#ef4444'; // Cor de alerta/atenção
+        } else if (diferencaKg === 0) {
+            // Atingiu exatamente a meta
+            painelMeta.innerHTML = `Meta atingida! 🎉 <br><span style="font-size: 12px; color: #22c55e; font-weight: bold;">Parabéns! Mantendo ${pesoMeta.toFixed(1)}kg</span>`;
+            painelMeta.style.color = '#22c55e'; // Verde sucesso
+        } else {
+            // Peso atual está menor que a meta
+            painelMeta.innerHTML = `${Math.abs(diferencaKg).toFixed(1)} kg abaixo da meta <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Alvo: ${pesoMeta.toFixed(1)}kg</span>`;
+            painelMeta.style.color = '#3b82f6'; // Azul informativo
+        }
+    }
+
     function exportarBackup() {
         const backupTotal = {
             historico: JSON.parse(localStorage.getItem('dadosGLP1')) || [],meta: localStorage.getItem('metaPesoGLP1') || "",altura: localStorage.getItem('alturaGLP1') || ""};
