@@ -708,9 +708,7 @@
         // Calcula os quilos que restam perder ou ganhar
         const diferencaKg = pesoAtual - pesoMeta;
 
-        console.log(diferencaKg);
-
-        painelKgFaltante.innerHTML = diferencaKg;
+        painelKgFaltante.innerHTML = `${diferencaKg} <br><span style="font-size: 11px; color: var(--cor-perigo); font-weight: bold;">KG Faltantes ⚠️</span>`;
     }
 
     function exportarBackup() {
