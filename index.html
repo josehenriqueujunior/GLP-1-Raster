@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Rastreador GLP-1</title>
+    <title>Meu Rastreador GLP-1</title> 
     <style>
         :root {
             --cor-principal: #2d6a4f;
@@ -249,7 +249,7 @@
                 <div id="painel-proxima-aplicacao" class="painel-val">-</div>
             </div>
             <div class="painel-box">
-                <div class="meta-titulo">KG Faltante</div>
+                <div class="meta-titulo">Progresso</div>
                 <div id="painel-quantidade-meta" class="painel-val">-</div>
             </div>
         </div>
@@ -635,38 +635,52 @@
         const dadosSalvos = JSON.parse(localStorage.getItem('dadosGLP1'));
         const registrosCorporais = dadosSalvos || [];
         const painelProximaDose = document.getElementById('painel-proxima-aplicacao');
-        const dadosComPeso = registrosCorporais.filter(r => r.peso && String(r.peso).trim() !== '');
+        
+        // Filtra apenas registros válidos
+        const dadosValidos = registrosCorporais.filter(r => r.data && String(r.data).trim() !== '');
 
-        if (dadosComPeso.length === 0) {
+        if (dadosValidos.length === 0) {
             painelProximaDose.innerText = "Nenhuma aplicação registrada";
             return;
         }
 
-        const ultimaAplicacao = parseFloat(dadosComPeso[dadosComPeso.length - 1].data);
-        const frequencia = parseInt(dadosComPeso[dadosComPeso.length - 1].frequencia) || 7;
+        // Pega o último registro inserido
+        const ultimoRegistro = dadosValidos[dadosValidos.length - 1];
+        const frequencia = parseInt(ultimoRegistro.frequencia) || 7;
         
-        // Calcula a data alvo somando os dias de frequência
-        const dataUltima = new Date(ultimaAplicacao.date);
-        const dataProxima = new Date(dataUltima.getTime());
-        dataProxima.setDate(dataUltima.getDate() + frequencia);
-
-        // Formata a data para o padrão brasileiro de exibição
-        const dataFormatadaBR = dataProxima.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        // CORREÇÃO: Divide a string "DD/MM/AAAA" para criar a data corretamente
+        const partesData = ultimoRegistro.data.split('/');
+        if (partesData.length !== 3) {
+            painelProximaDose.innerText = "Erro na data do registro";
+            return;
+        }
         
-        // Calcula a diferença de tempo em relação a hoje
-        const agora = new Date();
-        const diferencaTempo = dataProxima - agora;
-        const diasRestantes = Math.ceil(diferencaTempo / (1000 * 60 * 60 * 24));
+        const dia = parseInt(partesData[0], 10);
+        const mes = parseInt(partesData[1], 10) - 1; // Meses no JavaScript começam em 0
+        const ano = parseInt(partesData[2], 10);
 
-        console.log(diasRestantes);
+        // Cria os objetos de data zerando as horas para evitar erros de fuso horário
+        const dataProxima = new Date(ano, mes, dia);
+        dataProxima.setDate(dataProxima.getDate() + frequencia);
 
-        // Define o texto informativo baseado no prazo
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        dataProxima.setHours(0, 0, 0, 0);
+
+        // Formata a exibição para o padrão brasileiro (apenas a data)
+        const dataFormatadaBR = dataProxima.toLocaleDateString('pt-BR');
+        
+        // Calcula a diferença exata de dias
+        const diferencaTempo = dataProxima - hoje;
+        const diasRestantes = Math.round(diferencaTempo / (1000 * 60 * 60 * 24));
+
+        // Exibe o status correspondente no painel
         if (diasRestantes > 0) {
-            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #64748b; font-weight: normal;">Faltam ${diasRestantes} dia(s)</span>`;
+            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 11px; color: #666; font-weight: normal;">Faltam ${diasRestantes} dia(s)</span>`;
         } else if (diasRestantes === 0) {
-            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #f59e0b; font-weight: bold;">É HOJE! 💉</span>`;
+            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 11px; color: var(--cor-alerta); font-weight: bold;">É HOJE! 💉</span>`;
         } else {
-            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 12px; color: #ef4444; font-weight: bold;">Atrasada há ${Math.abs(diasRestantes)} dia(s) ⚠️</span>`;
+            painelProximaDose.innerHTML = `${dataFormatadaBR} <br><span style="font-size: 11px; color: var(--cor-perigo); font-weight: bold;">Atrasada há ${Math.abs(diasRestantes)} dia(s) ⚠️</span>`;
         }
     }
 
